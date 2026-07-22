@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>İnventar - İnventar İdarəetmə Sistemi</title>
+    <link rel="stylesheet" href="/css/base.css">
+    <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+    <div class="admin-container">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <h2>İnventar</h2>
+                <p>İdarə Paneli</p>
+            </div>
+            <ul class="nav-menu">
+                <li>
+                    <a href="/admin/dashboard">
+                        <span class="nav-icon">📊</span>
+                        <span>İdarə Paneli</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/organizations">
+                        <span class="nav-icon">🏢</span>
+                        <span>Təşkilatlar</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/buildings">
+                        <span class="nav-icon">🏗️</span>
+                        <span>Binalar</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/rooms">
+                        <span class="nav-icon">🚪</span>
+                        <span>Otaqlar</span>
+                    </a>
+                </li>
+                <li class="active">
+                    <a href="/admin/inventory">
+                        <span class="nav-icon">📦</span>
+                        <span>İnventar</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/users">
+                        <span class="nav-icon">👥</span>
+                        <span>İstifadəçilər</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/history">
+                        <span class="nav-icon">📜</span>
+                        <span>Tarixçə</span>
+                    </a>
+                </li>
+            </ul>
+            <div class="nav-footer">
+                <a href="#" onclick="logout()" class="logout-btn">
+                    <span class="nav-icon">🔚</span>
+                    <span>Çıxış</span>
+                </a>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="admin-header">
+                <div class="header-left">
+                    <h1>İnventar İdarəetməsi</h1>
+                    <p>Bütün inventar əşyaları</p>
+                </div>
+                <div class="header-right">
+                    <div class="user-info">
+                        <span id="current-user">İstifadəçi</span>
+                        <span id="user-role" class="badge badge-info">Admin</span>
+                    </div>
+                </div>
+            </header>
+
+            <div class="content-wrapper">
+                <div class="page-header">
+                    <h2>İnventar Siyahısı</h2>
+                    <div class="page-actions">
+                        <button class="btn btn-success" onclick="openImportModal()">
+                            <span>+</span> Excel İdxal Et
+                        </button>
+                        <button class="btn btn-primary" onclick="openAddItemModal()">
+                            <span>+</span> Yeni Əşya Əlavə Et
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Filter Bar -->
+                <div class="filter-bar">
+                    <div class="form-group">
+                        <label>Axtarış</label>
+                        <input type="text" id="search-input" placeholder="İnventar nömrəsi, yerləşməsi...">
+                    </div>
+                    <div class="form-group">
+                        <label>Təşkilat</label>
+                        <select id="organization-filter">
+                            <option value="">Bütün təşkilatlar</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Bina</label>
+                        <select id="building-filter">
+                            <option value="">Bütün binalar</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Kateqoriya</label>
+                        <select id="category-filter">
+                            <option value="">Bütün kateqoriyalar</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-info" onclick="applyFilters()">
+                        Tətbiq Et
+                    </button>
+                    <button class="btn" onclick="resetFilters()">
+                        Sıfırla
+                    </button>
+                </div>
+
+                <!-- Inventory Table -->
+                <div class="table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Yerləşməsi</th>
+                                <th>Status</th>
+                                <th>İnventar Nömrəsi</th>
+                                <th>Məsul Şəxs</th>
+                                <th>Kateqoriya</th>
+                                <th>Otaq</th>
+                                <th>Əməliyyatlar</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inventory-table-body">
+                            <!-- Inventory items will be loaded here -->
+                            <tr>
+                                <td colspan="7" class="text-center">Yüklənir...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                <div class="pagination">
+                    <button class="btn" id="prev-page" onclick="previousPage()">Öncəki</button>
+                    <span id="page-info">Səhifə 1 / 1</span>
+                    <button class="btn" id="next-page" onclick="nextPage()">Növbəti</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Add/Edit Item Modal -->
+    <div class="modal" id="item-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title">Yeni Əşya Əlavə Et</h3>
+                <button class="modal-close" onclick="closeItemModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="item-form">
+                    <input type="hidden" id="item-id">
+                    <div class="form-group">
+                        <label for="inventory-number">İnventar Nömrəsi *</label>
+                        <input type="text" id="inventory-number" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="location">Yerləşməsi</label>
+                        <input type="text" id="location">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="status">Status *</label>
+                            <select id="status" required>
+                                <option value="">Seçin</option>
+                                <option value="active">Aktiv</option>
+                                <option value="inactive">Qeyri-aktiv</option>
+                                <option value="maintenance">Təmirdə</option>
+                                <option value="lost">İtkin</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="room-id">Otaq *</label>
+                            <select id="room-id" required>
+                                <option value="">Seçin</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="responsible-person">Məsul Şəxs</label>
+                            <input type="text" id="responsible-person">
+                        </div>
+                        <div class="form-group">
+                            <label for="category">Kateqoriya</label>
+                            <input type="text" id="category">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" onclick="closeItemModal()">Ləğv Et</button>
+                <button type="button" class="btn btn-success" onclick="saveItem()">Yadda Saxla</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Import Modal -->
+    <div class="modal" id="import-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Excel Fayl İdxal Et</h3>
+                <button class="modal-close" onclick="closeImportModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Excel faylını (.xlsx) yükləyin. Fayl aşağıdakı sütunları əhatə etməlidir:</p>
+                <ul>
+                    <li>İnventar Nömrəsi (mütləq)</li>
+                    <li>Yerləşməsi</li>
+                    <li>Status</li>
+                    <li>Məsul Şəxs</li>
+                    <li>Kateqoriya</li>
+                    <li>Otaq ID (mütləq)</li>
+                </ul>
+                <div class="form-group">
+                    <label for="excel-file">Fayl Seçin</label>
+                    <input type="file" id="excel-file" accept=".xlsx, .xls">
+                </div>
+                <div id="import-preview" style="display: none;">
+                    <h4>Ön izləmə</h4>
+                    <div id="preview-table"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" onclick="closeImportModal()">Ləğv Et</button>
+                <button type="button" class="btn btn-success" onclick="importExcel()">İdxal Et</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirm Delete Modal -->
+    <div class="modal" id="delete-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Silinmə Təsdiqi</h3>
+                <button class="modal-close" onclick="closeDeleteModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Bu əşyanı silmək istədiyinizə əminsinizmi?</p>
+                <p id="delete-item-info"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" onclick="confirmDelete()">Bəli, Sil</button>
+                <button type="button" class="btn" onclick="closeDeleteModal()">Xeyr</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/main.js"></script>
+    <script src="/js/admin/inventory.js"></script>
+</body>
+</html>

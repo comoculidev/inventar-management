@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const InventoryItemsController = require('../controllers/inventoryItemsController');
+const { InventoryItemsController, upload } = require('../controllers/inventoryItemsController');
 
 // GET /api/inventory-items - List all inventory items
 router.get('/', InventoryItemsController.getAll);
@@ -20,8 +20,11 @@ router.get('/filter', InventoryItemsController.filter);
 // POST /api/inventory-items - Create new inventory item
 router.post('/', InventoryItemsController.create);
 
-// POST /api/inventory-items/bulk - Bulk create inventory items
+// POST /api/inventory-items/bulk - Bulk create inventory items (JSON)
 router.post('/bulk', InventoryItemsController.bulkCreate);
+
+// POST /api/inventory-items/import - Import from Excel file
+router.post('/import', upload.single('file'), InventoryItemsController.importExcel);
 
 // PUT /api/inventory-items/:id - Update inventory item
 router.put('/:id', InventoryItemsController.update);

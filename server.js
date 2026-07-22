@@ -42,6 +42,10 @@ app.get('/admin/dashboard', verifyAuth, verifyAdmin, (req, res) => {
     res.sendFile(path.join(__dirname, 'views', 'admin', 'dashboard.html'));
 });
 
+app.get('/admin/inventory', verifyAuth, verifyAdmin, (req, res) => {
+    res.sendFile(path.join(__dirname, 'views', 'admin', 'inventory.html'));
+});
+
 // API Routes
 app.use('/api/organizations', verifyAuth, require('./routes/organizations'));
 app.use('/api/buildings', verifyAuth, require('./routes/buildings'));

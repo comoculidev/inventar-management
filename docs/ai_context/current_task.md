@@ -1,15 +1,15 @@
-# Current Task: Task 6.1
+# Current Task: Task 7.1
 
-## Task 6.1: Create Admin Inventory Page Structure
+## Task 7.1: Create Admin Rooms Page Structure
 
 **Status**: IN PROGRESS
 
-**Description**: Build the HTML structure for the inventory management page with search bar, filter dropdowns, add item button, and data table.
+**Description**: Build the HTML structure for the rooms page with navigation, search bar, and room list display.
 
-**Goal**: Provide a complete interface for viewing and managing all inventory items.
+**Goal**: Provide interface where admin can see every room for every organization.
 
 **Expected Result**: 
-A complete HTML page at /admin/inventory with search input field, three filter dropdowns (Organization, Building, Category), Add Item button, and empty data table structure.
+A complete HTML page at /admin/rooms with search bar and empty room list container in compact modern UI.
 
 **Dependencies**: Task 1.5
 
@@ -20,19 +20,15 @@ A complete HTML page at /admin/inventory with search input field, three filter d
 ## Implementation Notes
 
 Need to create:
-1. views/admin/inventory.html - Inventory management page
-2. Search bar at the top
-3. Three filter dropdowns:
-   - Organization
-   - Building
-   - Category
-4. Add Item button
-5. Data table with columns:
-   - Location
-   - Status
-   - Inventory Number
-   - Responsible Person
-   - Category
-   - Actions (Edit, Delete)
-6. Modal for adding/editing items
-7. Pagination support
+1. views/admin/rooms.html - Rooms page
+2. Navigation sidebar (reusable from dashboard)
+3. Search bar
+4. Room list display area
+5. Each room should show:
+   - Name
+   - Building name
+   - Organization name
+   - Item count
+   - Actions (View items, Edit, Delete)
+6. Compact modern UI
+7. Azerbaijani language support

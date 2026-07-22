@@ -80,44 +80,109 @@ class InventoryItem {
         return result.rows;
     }
 
-    static async filter({ organizationId, buildingId, roomId, category, status }) {
-        let queryText = 'SELECT * FROM inventory_items WHERE true';
+    static async filter({ organizationId, buildingId, roomId, category, status, search, page = 1, limit = 20 }) {
+        let queryText = `SELECT ii.*, r.name as room_name, b.name as building_name, o.name as organization_name 
+            FROM inventory_items ii
+            JOIN rooms r ON ii.room_id = r.id
+            JOIN buildings b ON r.building_id = b.id
+            JOIN organizations o ON b.organization_id = o.id
+            WHERE true`;
         const params = [];
         let paramIndex = 1;
 
         if (roomId) {
-            queryText += ` AND room_id = $${paramIndex}`;
+            queryText += ` AND ii.room_id = $${paramIndex}`;
             params.push(roomId);
             paramIndex++;
         }
 
         if (category) {
-            queryText += ` AND category ILIKE $${paramIndex}`;
+            queryText += ` AND ii.category ILIKE $${paramIndex}`;
             params.push(`%${category}%`);
             paramIndex++;
         }
 
         if (status) {
-            queryText += ` AND status ILIKE $${paramIndex}`;
+            queryText += ` AND ii.status ILIKE $${paramIndex}`;
             params.push(`%${status}%`);
             paramIndex++;
         }
 
         if (buildingId) {
-            queryText += ` AND room_id IN (SELECT id FROM rooms WHERE building_id = $${paramIndex})`;
+            queryText += ` AND r.building_id = $${paramIndex}`;
             params.push(buildingId);
             paramIndex++;
         }
 
         if (organizationId) {
-            queryText += ` AND room_id IN (SELECT r.id FROM rooms r JOIN buildings b ON r.building_id = b.id WHERE b.organization_id = $${paramIndex})`;
+            queryText += ` AND b.organization_id = $${paramIndex}`;
             params.push(organizationId);
+            paramIndex++;
         }
 
-        queryText += ' ORDER BY inventory_number ASC';
+        if (search) {
+            queryText += ` AND (ii.inventory_number ILIKE $${paramIndex} OR ii.location ILIKE $${paramIndex} OR ii.status ILIKE $${paramIndex} OR ii.responsible_person ILIKE $${paramIndex} OR ii.category ILIKE $${paramIndex})`;
+            params.push(`%${search}%`);
+            paramIndex++;
+        }
+
+        queryText += ` ORDER BY ii.inventory_number ASC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
+        params.push(limit, (page - 1) * limit);
 
         const result = await query(queryText, params);
-        return result.rows;
+        
+        // Get total count for pagination
+        let countQuery = `SELECT COUNT(*) FROM inventory_items ii JOIN rooms r ON ii.room_id = r.id JOIN buildings b ON r.building_id = b.id JOIN organizations o ON b.organization_id = o.id WHERE true`;
+        const countParams = [];
+        let countParamIndex = 1;
+
+        if (roomId) {
+            countQuery += ` AND ii.room_id = $${countParamIndex}`;
+            countParams.push(roomId);
+            countParamIndex++;
+        }
+
+        if (category) {
+            countQuery += ` AND ii.category ILIKE $${countParamIndex}`;
+            countParams.push(`%${category}%`);
+            countParamIndex++;
+        }
+
+        if (status) {
+            countQuery += ` AND ii.status ILIKE $${countParamIndex}`;
+            countParams.push(`%${status}%`);
+            countParamIndex++;
+        }
+
+        if (buildingId) {
+            countQuery += ` AND r.building_id = $${countParamIndex}`;
+            countParams.push(buildingId);
+            countParamIndex++;
+        }
+
+        if (organizationId) {
+            countQuery += ` AND b.organization_id = $${countParamIndex}`;
+            countParams.push(organizationId);
+            countParamIndex++;
+        }
+
+        if (search) {
+            countQuery += ` AND (ii.inventory_number ILIKE $${countParamIndex} OR ii.location ILIKE $${countParamIndex} OR ii.status ILIKE $${countParamIndex} OR ii.responsible_person ILIKE $${countParamIndex} OR ii.category ILIKE $${countParamIndex})`;
+            countParams.push(`%${search}%`);
+        }
+
+        const countResult = await query(countQuery, countParams);
+        const total = parseInt(countResult.rows[0].count, 10);
+
+        return {
+            data: result.rows,
+            pagination: {
+                page: parseInt(page, 10),
+                limit: parseInt(limit, 10),
+                total,
+                totalPages: Math.ceil(total / limit)
+            }
+        };
     }
 
     static async getWithDetails() {
