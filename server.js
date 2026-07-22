@@ -5,6 +5,8 @@ const cookieParser = require('cookie-parser');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const { runMigrations } = require('./utils/migrationRunner');
+const { verifyAuth } = require('./middleware/authMiddleware');
+const { verifyAdmin, verifyUser } = require('./middleware/roleMiddleware');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -36,13 +38,14 @@ app.engine('html', require('ejs').renderFile);
 app.set('view engine', 'html');
 
 // API Routes
-app.use('/api/organizations', require('./routes/organizations'));
-app.use('/api/buildings', require('./routes/buildings'));
-app.use('/api/rooms', require('./routes/rooms'));
-app.use('/api/inventory-items', require('./routes/inventoryItems'));
-app.use('/api/users', require('./routes/users'));
-app.use('/api/history', require('./routes/historyLogs'));
-app.use('/api/dashboard', require('./routes/dashboard'));
+app.use('/api/organizations', verifyAuth, require('./routes/organizations'));
+app.use('/api/buildings', verifyAuth, require('./routes/buildings'));
+app.use('/api/rooms', verifyAuth, require('./routes/rooms'));
+app.use('/api/inventory-items', verifyAuth, require('./routes/inventoryItems'));
+app.use('/api/users', verifyAuth, verifyAdmin, require('./routes/users'));
+app.use('/api/history', verifyAuth, require('./routes/historyLogs'));
+app.use('/api/dashboard', verifyAuth, require('./routes/dashboard'));
+app.use('/api/auth', require('./routes/auth'));
 
 // Home route
 app.get('/', (req, res) => {
