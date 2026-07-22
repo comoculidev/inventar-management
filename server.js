@@ -4,9 +4,18 @@ const path = require('path');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
 const bodyParser = require('body-parser');
+const { runMigrations } = require('./utils/migrationRunner');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Run migrations on startup (in development)
+if (process.env.NODE_ENV !== 'test') {
+    runMigrations().catch(err => {
+        console.error('Migration failed:', err);
+        process.exit(1);
+    });
+}
 
 // Middleware
 app.use(cors());

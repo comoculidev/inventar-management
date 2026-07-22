@@ -39,9 +39,9 @@ Thumbs.db
 .coverage
 
 # Database
-*.sql
 *.sqlite
 *.db
+!migrations/
 
 # Session
 session/

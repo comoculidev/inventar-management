@@ -1,17 +1,17 @@
-# Current Task: Task 2.1
+# Current Task: Task 3.1
 
-## Task 2.1: Create Organizations Table Schema
+## Task 3.1: Create Express Server Entry Point
 
 **Status**: IN PROGRESS
 
-**Description**: Design and create the table structure for storing organization information (id, name, description, created_at).
+**Description**: Set up the main Express server file (app.js/server.js) with middleware configuration (CORS, body-parser, cookie-parser).
 
-**Goal**: Establish the top-level container entity in the inventory hierarchy.
+**Goal**: Establish a functional HTTP server that can handle requests and responses.
 
 **Expected Result**: 
-organizations table with appropriate fields, primary key (uuid), created_at timestamp, and constraints created via SQL script.
+Working server.js file with all required middleware configured (express.json(), express.urlencoded(), cookie-parser).
 
-**Dependencies**: Task 1.3
+**Dependencies**: Task 1.6
 
 **Started**: 2024
 
@@ -19,13 +19,17 @@ organizations table with appropriate fields, primary key (uuid), created_at time
 
 ## Implementation Notes
 
-Need to create:
-1. SQL migration file for organizations table
-2. The table should have:
-   - id (uuid, primary key)
-   - name (varchar, not null)
-   - description (text, nullable)
-   - created_at (timestamp with time zone, default now())
-   - updated_at (timestamp with time zone, default now())
+The server.js file was already created in Task 1.6 with:
+- Express middleware (cors, json, urlencoded, cookie-parser, body-parser)
+- Static file serving
+- Migration runner integration
+- Basic error handling
+- 404 handler
 
-This will be in the migrations folder.
+However, we need to enhance it for Phase 3:
+1. Add route imports and mounting
+2. Configure CORS properly
+3. Add more robust error handling
+4. Set up proper middleware order
+
+The server.js already exists, so we may need to enhance it or confirm it meets all requirements.
