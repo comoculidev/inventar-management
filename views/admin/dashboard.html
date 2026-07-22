@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>İdarə Paneli - İnventar İdarəetmə Sistemi</title>
+    <link rel="stylesheet" href="/css/base.css">
+    <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+    <div class="admin-container">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <h2>İnventar</h2>
+                <p>İdarə Paneli</p>
+            </div>
+            <ul class="nav-menu">
+                <li class="active">
+                    <a href="/admin/dashboard">
+                        <span class="nav-icon">📊</span>
+                        <span>İdarə Paneli</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/organizations">
+                        <span class="nav-icon">🏢</span>
+                        <span>Təşkilatlar</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/buildings">
+                        <span class="nav-icon">🏗️</span>
+                        <span>Binalar</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/rooms">
+                        <span class="nav-icon">🚪</span>
+                        <span>Otaqlar</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/inventory">
+                        <span class="nav-icon">📦</span>
+                        <span>İnventar</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/users">
+                        <span class="nav-icon">👥</span>
+                        <span>İstifadəçilər</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/history">
+                        <span class="nav-icon">📜</span>
+                        <span>Tarixçə</span>
+                    </a>
+                </li>
+            </ul>
+            <div class="nav-footer">
+                <a href="#" onclick="logout()" class="logout-btn">
+                    <span class="nav-icon">🔚</span>
+                    <span>Çıxış</span>
+                </a>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="admin-header">
+                <div class="header-left">
+                    <h1>İdarə Paneli</h1>
+                    <p>Xoş gəlmisiniz!</p>
+                </div>
+                <div class="header-right">
+                    <div class="user-info">
+                        <span id="current-user">İstifadəçi</span>
+                        <span id="user-role" class="badge badge-info">Admin</span>
+                    </div>
+                </div>
+            </header>
+
+            <div class="content-wrapper">
+                <h2>Statistika</h2>
+                
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">🏢</div>
+                        <div class="stat-info">
+                            <span class="stat-value" id="total-organizations">0</span>
+                            <span class="stat-label">Təşkilatlar</span>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon">🏗️</div>
+                        <div class="stat-info">
+                            <span class="stat-value" id="total-buildings">0</span>
+                            <span class="stat-label">Binalar</span>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon">🚪</div>
+                        <div class="stat-info">
+                            <span class="stat-value" id="total-rooms">0</span>
+                            <span class="stat-label">Otaqlar</span>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon">📦</div>
+                        <div class="stat-info">
+                            <span class="stat-value" id="total-items">0</span>
+                            <span class="stat-label">İnventar</span>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon">👥</div>
+                        <div class="stat-info">
+                            <span class="stat-value" id="total-users">0</span>
+                            <span class="stat-label">İstifadəçilər</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="quick-actions">
+                    <h3>Sürətli Əməliyyatlar</h3>
+                    <div class="action-buttons">
+                        <a href="/admin/organizations" class="btn btn-primary">
+                            <span>+</span> Təşkilat Əlavə Et
+                        </a>
+                        <a href="/admin/buildings" class="btn btn-primary">
+                            <span>+</span> Bina Əlavə Et
+                        </a>
+                        <a href="/admin/rooms" class="btn btn-primary">
+                            <span>+</span> Otaq Əlavə Et
+                        </a>
+                        <a href="/admin/inventory" class="btn btn-primary">
+                            <span>+</span> İnventar Əlavə Et
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/js/main.js"></script>
+    <script src="/js/admin/dashboard.js"></script>
+</body>
+</html>

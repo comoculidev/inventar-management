@@ -6,7 +6,7 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const { runMigrations } = require('./utils/migrationRunner');
 const { verifyAuth } = require('./middleware/authMiddleware');
-const { verifyAdmin, verifyUser } = require('./middleware/roleMiddleware');
+const { verifyAdmin } = require('./middleware/roleMiddleware');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -36,6 +36,11 @@ app.use('/images', express.static(path.join(__dirname, 'public/images')));
 app.set('views', path.join(__dirname, 'views'));
 app.engine('html', require('ejs').renderFile);
 app.set('view engine', 'html');
+
+// Admin Routes (protected)
+app.get('/admin/dashboard', verifyAuth, verifyAdmin, (req, res) => {
+    res.sendFile(path.join(__dirname, 'views', 'admin', 'dashboard.html'));
+});
 
 // API Routes
 app.use('/api/organizations', verifyAuth, require('./routes/organizations'));

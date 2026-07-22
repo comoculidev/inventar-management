@@ -1,15 +1,15 @@
-# Current Task: Task 5.1
+# Current Task: Task 6.1
 
-## Task 5.1: Create Admin Dashboard Page Structure
+## Task 6.1: Create Admin Inventory Page Structure
 
 **Status**: IN PROGRESS
 
-**Description**: Build the HTML structure for the admin dashboard page with navigation sidebar, header, and statistics containers.
+**Description**: Build the HTML structure for the inventory management page with search bar, filter dropdowns, add item button, and data table.
 
-**Goal**: Provide a visual interface for displaying inventory system overview metrics.
+**Goal**: Provide a complete interface for viewing and managing all inventory items.
 
 **Expected Result**: 
-A complete HTML page at /admin/dashboard with navigation menu, statistics cards container placeholder areas, compact modern UI design.
+A complete HTML page at /admin/inventory with search input field, three filter dropdowns (Organization, Building, Category), Add Item button, and empty data table structure.
 
 **Dependencies**: Task 1.5
 
@@ -20,17 +20,19 @@ A complete HTML page at /admin/dashboard with navigation menu, statistics cards 
 ## Implementation Notes
 
 Need to create:
-1. views/admin/dashboard.html - Admin dashboard page
-2. Navigation sidebar with links to:
-   - Dashboard
-   - Organizations
-   - Buildings
-   - Rooms
-   - Inventory
-   - Users
-   - History
-   - Logout
-3. Header with title
-4. Statistics cards container (5 cards for organizations, buildings, rooms, items, users)
-5. Compact modern UI design
-6. Azerbaijani language support
+1. views/admin/inventory.html - Inventory management page
+2. Search bar at the top
+3. Three filter dropdowns:
+   - Organization
+   - Building
+   - Category
+4. Add Item button
+5. Data table with columns:
+   - Location
+   - Status
+   - Inventory Number
+   - Responsible Person
+   - Category
+   - Actions (Edit, Delete)
+6. Modal for adding/editing items
+7. Pagination support
