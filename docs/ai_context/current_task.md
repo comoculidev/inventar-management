@@ -1,17 +1,17 @@
-# Current Task: Task 3.1
+# Current Task: Task 4.1
 
-## Task 3.1: Create Express Server Entry Point
+## Task 4.1: Create Registration/Signup Endpoint
 
 **Status**: IN PROGRESS
 
-**Description**: Set up the main Express server file (app.js/server.js) with middleware configuration (CORS, body-parser, cookie-parser).
+**Description**: Implement endpoint for new user registration with password hashing using bcryptjs and input validation.
 
-**Goal**: Establish a functional HTTP server that can handle requests and responses.
+**Goal**: Allow users to create accounts (admin can also create users via admin panel).
 
 **Expected Result**: 
-Working server.js file with all required middleware configured (express.json(), express.urlencoded(), cookie-parser).
+POST /api/auth/register endpoint that creates users with hashed passwords in the database, validates username format.
 
-**Dependencies**: Task 1.6
+**Dependencies**: Task 3.1
 
 **Started**: 2024
 
@@ -19,17 +19,15 @@ Working server.js file with all required middleware configured (express.json(), 
 
 ## Implementation Notes
 
-The server.js file was already created in Task 1.6 with:
-- Express middleware (cors, json, urlencoded, cookie-parser, body-parser)
-- Static file serving
-- Migration runner integration
-- Basic error handling
-- 404 handler
+Need to create:
+1. routes/auth.js - Authentication routes
+2. controllers/authController.js - Authentication controller
+3. POST /api/auth/register endpoint
 
-However, we need to enhance it for Phase 3:
-1. Add route imports and mounting
-2. Configure CORS properly
-3. Add more robust error handling
-4. Set up proper middleware order
+The endpoint should:
+- Validate username and password
+- Hash password using bcryptjs
+- Create user in database
+- Return success response
 
-The server.js already exists, so we may need to enhance it or confirm it meets all requirements.
+Note: User model already exists with create method that handles password hashing.

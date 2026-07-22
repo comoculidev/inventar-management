@@ -35,7 +35,16 @@ app.set('views', path.join(__dirname, 'views'));
 app.engine('html', require('ejs').renderFile);
 app.set('view engine', 'html');
 
-// Routes
+// API Routes
+app.use('/api/organizations', require('./routes/organizations'));
+app.use('/api/buildings', require('./routes/buildings'));
+app.use('/api/rooms', require('./routes/rooms'));
+app.use('/api/inventory-items', require('./routes/inventoryItems'));
+app.use('/api/users', require('./routes/users'));
+app.use('/api/history', require('./routes/historyLogs'));
+app.use('/api/dashboard', require('./routes/dashboard'));
+
+// Home route
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'views', 'index.html'));
 });
@@ -43,12 +52,18 @@ app.get('/', (req, res) => {
 // Error handling middleware
 app.use((err, req, res, next) => {
     console.error(err.stack);
-    res.status(500).send('Server Error');
+    res.status(500).json({
+        success: false,
+        error: 'Server Error'
+    });
 });
 
 // 404 handler
 app.use((req, res) => {
-    res.status(404).send('Page Not Found');
+    res.status(404).json({
+        success: false,
+        error: 'Not Found'
+    });
 });
 
 // Start server
