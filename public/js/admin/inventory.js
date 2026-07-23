@@ -72,7 +72,7 @@ async function loadOrganizations() {
             // Populate filter dropdown
             const filterSelect = document.getElementById('organization-filter');
             if (filterSelect) {
-                filterSelect.innerHTML = '<option value="">Btn tkilatlar</option>';
+                filterSelect.innerHTML = '<option value="">B\u001ct\u001bn t\u0259\u015fkilatlar</option>';
                 data.data.forEach(org => {
                     const option = document.createElement('option');
                     option.value = org.id;
@@ -84,7 +84,7 @@ async function loadOrganizations() {
             // Populate item organization dropdown
             const itemOrgSelect = document.getElementById('item-organization');
             if (itemOrgSelect) {
-                itemOrgSelect.innerHTML = '<option value="">Sein</option>';
+                itemOrgSelect.innerHTML = '<option value="">Se\u0017in</option>';
                 data.data.forEach(org => {
                     const option = document.createElement('option');
                     option.value = org.id;
@@ -111,7 +111,7 @@ async function loadBuildings(organizationId) {
             buildings = data.data;
             const select = document.getElementById('building-filter');
             if (select) {
-                select.innerHTML = '<option value="">Btn binalar</option>';
+                select.innerHTML = '<option value="">B\u001ct\u001bn binalar</option>';
                 data.data.forEach(building => {
                     const option = document.createElement('option');
                     option.value = building.id;
@@ -145,7 +145,7 @@ async function loadBuildingsForItem(organizationId) {
         if (data.success) {
             const select = document.getElementById('item-building');
             if (select) {
-                select.innerHTML = '<option value="">Sein</option>';
+                select.innerHTML = '<option value="">Se\u0017in</option>';
                 data.data.forEach(building => {
                     const option = document.createElement('option');
                     option.value = building.id;
@@ -157,7 +157,7 @@ async function loadBuildingsForItem(organizationId) {
             // Reset room dropdown
             const roomSelect = document.getElementById('item-room');
             if (roomSelect) {
-                roomSelect.innerHTML = '<option value="">Sein</option>';
+                roomSelect.innerHTML = '<option value="">Se\u0017in</option>';
             }
         }
     } catch (error) {
@@ -177,7 +177,7 @@ async function loadRoomsByBuilding(buildingId) {
         if (data.success) {
             const select = document.getElementById('room-id');
             if (select) {
-                select.innerHTML = '<option value="">Sein</option>';
+                select.innerHTML = '<option value="">Se\u0017in</option>';
                 data.data.forEach(room => {
                     const option = document.createElement('option');
                     option.value = room.id;
@@ -203,7 +203,7 @@ async function loadRoomsForItem(buildingId) {
         if (data.success) {
             const select = document.getElementById('item-room');
             if (select) {
-                select.innerHTML = '<option value="">Sein</option>';
+                select.innerHTML = '<option value="">Se\u0017in</option>';
                 data.data.forEach(room => {
                     const option = document.createElement('option');
                     option.value = room.id;
@@ -227,7 +227,7 @@ async function loadRooms() {
             rooms = data.data;
             const select = document.getElementById('room-id');
             if (select) {
-                select.innerHTML = '<option value="">Sein</option>';
+                select.innerHTML = '<option value="">Se\u0017in</option>';
                 data.data.forEach(room => {
                     const option = document.createElement('option');
                     option.value = room.id;
@@ -241,21 +241,46 @@ async function loadRooms() {
     }
 }
 
-// Load inventory items
+// Load inventory items - use getAll endpoint for initial load, filter for filtered results
 async function loadInventoryItems() {
     try {
-        const params = new URLSearchParams(currentFilters);
-        params.append('page', currentPage);
-        params.append('limit', 20);
+        // Check if we have any filters applied
+        const hasFilters = currentFilters.search || currentFilters.organizationId || 
+                          currentFilters.buildingId || currentFilters.category;
         
-        const response = await authenticatedFetch(`/api/inventory-items/filter?${params}`);
+        let response;
+        if (hasFilters) {
+            // Use filter endpoint with pagination
+            const params = new URLSearchParams(currentFilters);
+            params.append('page', currentPage);
+            params.append('limit', 20);
+            response = await authenticatedFetch(`/api/inventory-items/filter?${params}`);
+        } else {
+            // Use getAll endpoint for unfiltered list
+            response = await authenticatedFetch('/api/inventory-items');
+        }
+        
         const data = await response.json();
         
         if (data.success) {
-            renderInventoryTable(data.data.data || data.data);
-            if (data.data.pagination) {
-                currentPage = data.data.pagination.page;
-                totalPages = data.data.pagination.totalPages;
+            // Handle both formats: direct array or {data, pagination}
+            let items = data.data;
+            let pagination = null;
+            
+            if (hasFilters && data.data && data.data.data) {
+                items = data.data.data;
+                pagination = data.data.pagination;
+            }
+            
+            renderInventoryTable(items);
+            
+            if (pagination) {
+                currentPage = pagination.page;
+                totalPages = pagination.totalPages;
+            } else {
+                // No pagination for unfiltered list
+                currentPage = 1;
+                totalPages = 1;
             }
         }
     } catch (error) {
@@ -644,6 +669,47 @@ async function importExcel() {
     } catch (error) {
         console.error('Error importing Excel:', error);
         showAlert('Fayl idxal olunark\u0259n x\u0259ta ba\u015f verdi', 'error');
+    }
+}
+
+// Export to Excel
+async function exportToExcel() {
+    try {
+        // Get all items (not paginated)
+        const response = await authenticatedFetch('/api/inventory-items');
+        const data = await response.json();
+        
+        if (data.success && data.data) {
+            // Create Excel file
+            const items = data.data;
+            
+            // Prepare data for Excel
+            const excelData = items.map(item => ({
+                '\u0130nventar N\u00f6mr\u0259si': item.inventory_number || '',
+                'Yerl\u0259\u015fd\u0259': item.location || '',
+                'Status': item.status || '',
+                'Kateqoriya': item.category || '',
+                'M\u0259sul \u015e\u0259xs': item.responsible_person || '',
+                'Otaq': item.room_name || '',
+                'Bina': item.building_name || '',
+                'T\u0259\u015fkilat': item.organization_name || ''
+            }));
+            
+            // Create worksheet
+            const ws = XLSX.utils.json_to_sheet(excelData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, '\u0130nventar');
+            
+            // Download the file
+            XLSX.writeFile(wb, 'inventar_\u0259\u015fyalar.xlsx');
+            
+            showAlert('\u0130nventar \u0259\u015fyalar\u0131 Excel fayl\u0131na ixrac edildi!', 'success');
+        } else {
+            showAlert('\u0130nventar \u0259\u015fyalar\u0131 y\u00fckl\u0259m\u0259k al\u0131nmad\u0131', 'error');
+        }
+    } catch (error) {
+        console.error('Error exporting to Excel:', error);
+        showAlert('Excel fayl\u0131na ixrac olunark\u0259n x\u0259ta ba\u015f verdi', 'error');
     }
 }
 

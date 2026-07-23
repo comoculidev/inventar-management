@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="/css/base.css">
     <link rel="stylesheet" href="/css/admin.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
     <div class="admin-container">
@@ -87,6 +88,9 @@
                 <div class="page-header">
                     <h2>İnventar Elementləri</h2>
                     <div class="page-actions">
+                        <button class="btn btn-success" onclick="exportToExcel()">
+                            <i class="fas fa-file-export"></i> Excelə ixrac et
+                        </button>
                         <button class="btn btn-success" onclick="openImportModal()">
                             <i class="fas fa-file-import"></i> Exceldən idxal et
                         </button>
@@ -126,8 +130,11 @@
                             <option value="diger">Diger</option>
                         </select>
                     </div>
-                    <button type="button" class="btn btn-primary" onclick="loadInventory()">
+                    <button type="button" class="btn btn-primary" onclick="applyFilters()">
                         <i class="fas fa-filter"></i> Filtrə et
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="resetFilters()">
+                        <i class="fas fa-redo"></i> Sıfırla
                     </button>
                 </div>
 
@@ -289,9 +296,15 @@
                     <h4>Ön izləmə</h4>
                     <div id="preview-table"></div>
                 </div>
-                <p style="color: var(--text-light); font-size: 0.9rem; margin-top: 1rem;">
-                    <i class="fas fa-info-circle"></i> Fayl formatı: İnventar nömrəsi, Yerləşdə, Status, Kateqoriya, Məsul şəxs, Otaq ID
-                </p>
+                <div class="alert alert-info" style="margin-top: 1rem; padding: 1rem; border-radius: 4px;">
+                    <i class="fas fa-info-circle"></i>
+                    <strong>Excel Formatı:</strong><br>
+                    Sütunlar: İnventar Nömrəsi, Yerləşdə, Status, Kateqoriya, Məsul Şəxs<br>
+                    <strong>Və ya:</strong><br>
+                    Inventory Number, Location, Status, Category, Responsible Person, Room ID<br>
+                    <strong>Və ya:</strong><br>
+                    İnventar Nömrəsi, Yerləşdə, Status, Kateqoriya, Məsul Şəxs, Təşkilat, Bina, Otaq
+                </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" onclick="closeImportModal()">
@@ -353,15 +366,29 @@
         
         // Import Excel function
         function importExcel() {
-            if (typeof importExcelFile === 'function') {
-                importExcelFile();
+            if (typeof importExcel === 'function') {
+                importExcel();
             }
         }
         
-        // Load inventory function
-        function loadInventory() {
-            if (typeof loadInventoryData === 'function') {
-                loadInventoryData();
+        // Export to Excel function
+        function exportToExcel() {
+            if (typeof exportToExcel === 'function') {
+                exportToExcel();
+            }
+        }
+        
+        // Apply filters function
+        function applyFilters() {
+            if (typeof applyFilters === 'function') {
+                applyFilters();
+            }
+        }
+        
+        // Reset filters function
+        function resetFilters() {
+            if (typeof resetFilters === 'function') {
+                resetFilters();
             }
         }
         

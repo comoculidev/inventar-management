@@ -3,6 +3,7 @@ const Room = require('../models/room');
 const Building = require('../models/building');
 const Organization = require('../models/organization');
 const multer = require('multer');
+const xlsx = require('xlsx');
 const { parseExcelBuffer, validateItems, resolveRoomId } = require('../utils/excelImport');
 const HistoryLog = require('../models/historyLog');
 
@@ -436,6 +437,62 @@ class InventoryItemsController {
             });
         } catch (error) {
             console.error('Error importing Excel file:', error);
+            res.status(500).json({
+                success: false,
+                error: 'Server error'
+            });
+        }
+    }
+
+    // Export items to Excel
+    static async exportExcel(req, res) {
+        try {
+            const { organizationId, buildingId, roomId, category, status } = req.query;
+            
+            let items;
+            
+            // Get items based on filters
+            if (roomId) {
+                items = await InventoryItem.getByRoom(roomId);
+            } else if (organizationId || buildingId || category || status) {
+                const result = await InventoryItem.filter({
+                    organizationId,
+                    buildingId,
+                    category,
+                    status
+                });
+                items = result.data || result;
+            } else {
+                items = await InventoryItem.getWithDetails();
+            }
+            
+            // Prepare data for Excel
+            const excelData = items.map(item => ({
+                'İnventar Nömrəsi': item.inventory_number || '',
+                'Yerləşdə': item.location || '',
+                'Status': item.status || '',
+                'Kateqoriya': item.category || '',
+                'Məsul Şəxs': item.responsible_person || '',
+                'Otaq': item.room_name || '',
+                'Bina': item.building_name || '',
+                'Təşkilat': item.organization_name || ''
+            }));
+            
+            // Create worksheet
+            const ws = xlsx.utils.json_to_sheet(excelData);
+            const wb = xlsx.utils.book_new();
+            xlsx.utils.book_append_sheet(wb, ws, 'İnventar');
+            
+            // Set response headers
+            res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            res.setHeader('Content-Disposition', 'attachment; filename=inventar_elementleri.xlsx');
+            
+            // Send the file
+            const buffer = xlsx.write(wb, { type: 'buffer', bookType: 'xlsx' });
+            res.send(buffer);
+            
+        } catch (error) {
+            console.error('Error exporting to Excel:', error);
             res.status(500).json({
                 success: false,
                 error: 'Server error'
