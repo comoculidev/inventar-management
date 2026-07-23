@@ -4,10 +4,33 @@ const Building = require('../models/building');
 class RoomsController {
     static async getAll(req, res) {
         try {
-            const rooms = await Room.getWithDetails();
+            const { search, organizationId, buildingId, page = 1, limit = 10 } = req.query;
+            
+            // If filters are provided, use filtered method
+            if (search || organizationId || buildingId || page > 1 || limit !== 10) {
+                const result = await Room.getFiltered({
+                    search,
+                    organizationId,
+                    buildingId,
+                    page: parseInt(page),
+                    limit: parseInt(limit)
+                });
+                
+                return res.json({
+                    success: true,
+                    data: result.rooms,
+                    total: result.total,
+                    page: parseInt(page),
+                    totalPages: Math.ceil(result.total / parseInt(limit))
+                });
+            }
+            
+            // Otherwise, get all rooms with details
+            const rooms = await Room.getWithItemCounts();
             res.json({
                 success: true,
-                data: rooms
+                data: rooms,
+                total: rooms.length
             });
         } catch (error) {
             console.error('Error fetching rooms:', error);
