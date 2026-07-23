@@ -166,7 +166,7 @@
                         </div>
                     </div>
                     <div class="form-group">
-                        <label for="user-role">Rol</label>
+                        <label for="user-role-select">Rol</label>
                         <select id="user-role-select" required>
                             <option value="">Seçin</option>
                             <option value="admin">Admin</option>
@@ -186,158 +186,52 @@
         </div>
     </div>
 
+    <!-- Edit User Modal -->
+    <div class="modal" id="edit-user-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>İstifadəçini Redaktə Et</h3>
+                <button class="modal-close" onclick="closeEditUserModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="edit-user-form">
+                    <input type="hidden" id="edit-user-id">
+                    <div class="form-group">
+                        <label for="edit-user-username">İstifadəçi Adı</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-user"></i>
+                            <input type="text" id="edit-user-username" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-user-password">Yeni Şifrə (boş qalsanız dəyişməz)</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-lock"></i>
+                            <input type="password" id="edit-user-password">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-user-role">Rol</label>
+                        <select id="edit-user-role" required>
+                            <option value="">Seçin</option>
+                            <option value="admin">Admin</option>
+                            <option value="user">İstifadəçi</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeEditUserModal()">
+                    Ləğv et
+                </button>
+                <button type="button" class="btn btn-primary" onclick="updateUser()">
+                    <i class="fas fa-save"></i> Yenilə
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script src="/js/main.js"></script>
-    <script>
-        // Logout function
-        async function logout() {
-            try {
-                const response = await fetch('/api/auth/logout', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                });
-                const data = await response.json();
-                if (data.success) {
-                    window.location.href = '/login';
-                }
-            } catch (error) {
-                console.error('Logout error:', error);
-                window.location.href = '/login';
-            }
-        }
-        
-        // Modal functions
-        function openAddUserModal() {
-            document.getElementById('add-user-modal').classList.add('active');
-        }
-        
-        function closeAddUserModal() {
-            document.getElementById('add-user-modal').classList.remove('active');
-        }
-        
-        // Add user function
-        async function addUser() {
-            const username = document.getElementById('user-username').value.trim();
-            const password = document.getElementById('user-password').value;
-            const role = document.getElementById('user-role-select').value;
-            
-            if (!username || !password || !role) {
-                showAlert('Bütün sahələr tələb olunur', 'error');
-                return;
-            }
-            
-            try {
-                const response = await fetch('/api/users', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ username, password, role })
-                });
-                const data = await response.json();
-                if (data.success) {
-                    showAlert('İstifadəçi uğurla yaradıldı!', 'success');
-                    closeAddUserModal();
-                    loadUsers();
-                } else {
-                    showAlert(data.error || 'Xəta baş verdi', 'error');
-                }
-            } catch (error) {
-                showAlert('Server xəta: ' + error.message, 'error');
-            }
-        }
-        
-        // Load users function
-        async function loadUsers() {
-            try {
-                const response = await fetch('/api/users', {
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                });
-                const data = await response.json();
-                if (data.success) {
-                    const tableBody = document.getElementById('users-table-body');
-                    if (data.data.length === 0) {
-                        tableBody.innerHTML = '<tr><td colspan="6" class="text-center">Heç bir istifadəçi tapılmadı</td></tr>';
-                        return;
-                    }
-                    
-                    tableBody.innerHTML = data.data.map(user => `
-                        <tr>
-                            <td>${user.username}</td>
-                            <td><span class="badge badge-${user.role === 'admin' ? 'info' : 'success'}">${user.role === 'admin' ? 'Admin' : 'İstifadəçi'}</span></td>
-                            <td>${new Date(user.created_at).toLocaleDateString('az-AZ')}</td>
-                            <td>-</td>
-                            <td><span class="badge badge-success">Aktiv</span></td>
-                            <td>
-                                <button class="btn btn-danger btn-icon" onclick="deleteUser('${user.id}')">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </td>
-                        </tr>
-                    `).join('');
-                }
-            } catch (error) {
-                console.error('Error loading users:', error);
-            }
-        }
-        
-        // Delete user function
-        async function deleteUser(userId) {
-            if (!confirm('Silmək istədiyinizə əminsiniz?')) {
-                return;
-            }
-            
-            try {
-                const response = await fetch(`/api/users/${userId}`, {
-                    method: 'DELETE'
-                });
-                const data = await response.json();
-                if (data.success) {
-                    showAlert('İstifadəçi uğurla silindi!', 'success');
-                    loadUsers();
-                } else {
-                    showAlert(data.error || 'Xəta baş verdi', 'error');
-                }
-            } catch (error) {
-                showAlert('Server xəta: ' + error.message, 'error');
-            }
-        }
-        
-        // Load user info
-        async function loadUserInfo() {
-            try {
-                const response = await fetch('/api/auth/me', {
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                });
-                const data = await response.json();
-                if (data.success && data.data) {
-                    document.getElementById('current-user').textContent = data.data.username;
-                    const roleBadge = document.getElementById('user-role');
-                    roleBadge.textContent = data.data.role === 'admin' ? 'Admin' : 'İstifadəçi';
-                    roleBadge.className = `badge badge-${data.data.role === 'admin' ? 'info' : 'success'}`;
-                }
-            } catch (error) {
-                console.error('Error loading user info:', error);
-            }
-        }
-        
-        // Close modals on outside click
-        window.onclick = function(event) {
-            if (event.target.classList.contains('modal')) {
-                event.target.classList.remove('active');
-            }
-        }
-        
-        // Initialize on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            loadUserInfo();
-            loadUsers();
-        });
-    </script>
+    <script src="/js/admin/users.js"></script>
 </body>
 </html>

@@ -182,79 +182,50 @@
         </div>
     </div>
 
+    <!-- Edit Building Modal -->
+    <div class="modal" id="edit-building-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Bina Redaktə Et</h3>
+                <button class="modal-close" onclick="closeEditBuildingModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="edit-building-form">
+                    <input type="hidden" id="edit-building-id">
+                    <div class="form-group">
+                        <label for="edit-building-name">Bina Adı</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-city"></i>
+                            <input type="text" id="edit-building-name" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-building-organization">Təşkilat</label>
+                        <select id="edit-building-organization" required>
+                            <option value="">Seçin</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-building-description">Təsviri</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-align-left"></i>
+                            <textarea id="edit-building-description" rows="3"></textarea>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeEditBuildingModal()">
+                    Ləğv et
+                </button>
+                <button type="button" class="btn btn-primary" onclick="updateBuilding()">
+                    <i class="fas fa-save"></i> Yenilə
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script src="/js/main.js"></script>
-    <script>
-        // Logout function
-        async function logout() {
-            try {
-                const response = await fetch('/api/auth/logout', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                });
-                const data = await response.json();
-                if (data.success) {
-                    window.location.href = '/login';
-                }
-            } catch (error) {
-                console.error('Logout error:', error);
-                window.location.href = '/login';
-            }
-        }
-        
-        // Modal functions
-        function openAddBuildingModal() {
-            document.getElementById('add-building-modal').classList.add('active');
-        }
-        
-        function closeAddBuildingModal() {
-            document.getElementById('add-building-modal').classList.remove('active');
-        }
-        
-        // Add building function
-        function addBuilding() {
-            // Implementation would be added here
-            showAlert('Bina əlavə etmək funksiyası hazırda aktiv deyil', 'info');
-        }
-        
-        // Load buildings function
-        function loadBuildings() {
-            // Implementation would be added here
-            showAlert('Binaları yükləmək funksiyası hazırda aktiv deyil', 'info');
-        }
-        
-        // Load user info
-        async function loadUserInfo() {
-            try {
-                const response = await fetch('/api/auth/me', {
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                });
-                const data = await response.json();
-                if (data.success && data.data) {
-                    document.getElementById('current-user').textContent = data.data.username;
-                    const roleBadge = document.getElementById('user-role');
-                    roleBadge.textContent = data.data.role === 'admin' ? 'Admin' : 'İstifadəçi';
-                    roleBadge.className = `badge badge-${data.data.role === 'admin' ? 'info' : 'success'}`;
-                }
-            } catch (error) {
-                console.error('Error loading user info:', error);
-            }
-        }
-        
-        // Close modals on outside click
-        window.onclick = function(event) {
-            if (event.target.classList.contains('modal')) {
-                event.target.classList.remove('active');
-            }
-        }
-        
-        // Initialize on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            loadUserInfo();
-        });
-    </script>
+    <script src="/js/admin/buildings.js"></script>
 </body>
 </html>
