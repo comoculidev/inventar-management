@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const { query } = require('../config/db');
+const { seedUsers } = require('./seedAdminUser');
 
 const MIGRATIONS_DIR = path.join(__dirname, '../migrations');
 
@@ -50,6 +51,12 @@ async function runMigrations() {
         }
         
         console.log('All migrations completed successfully');
+        
+        // Seed admin and test users
+        console.log('Seeding users...');
+        await seedUsers();
+        console.log('User seeding completed!');
+        
     } catch (error) {
         console.error('Migration error:', error);
         process.exit(1);
