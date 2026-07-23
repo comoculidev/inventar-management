@@ -1,6 +1,4 @@
 // Room Detail Page JavaScript
-let currentPage = 1;
-let totalPages = 1;
 let currentRoomId = null;
 let currentFilters = {
     search: '',
@@ -20,15 +18,18 @@ document.addEventListener('DOMContentLoaded', function() {
         loadUserInfo();
         loadCategories();
     } else {
-        showError('Otaq ID tapılmadı');
+        showError('Otaq ID tapilmadi');
     }
     
-    // Add event listeners
-    document.getElementById('item-search-input').addEventListener('keyup', function(e) {
-        if (e.key === 'Enter') {
-            applyItemFilters();
-        }
-    });
+    // Add event listeners - only if elements exist
+    const searchInput = document.getElementById('room-search');
+    if (searchInput) {
+        searchInput.addEventListener('keyup', function(e) {
+            if (e.key === 'Enter') {
+                applyItemFilters();
+            }
+        });
+    }
 });
 
 // Load user info
@@ -37,8 +38,15 @@ function loadUserInfo() {
     if (user) {
         try {
             const userData = JSON.parse(user);
-            document.getElementById('current-user').textContent = userData.username || 'İstifadəçi';
-            document.getElementById('user-role').textContent = userData.role === 'admin' ? 'Admin' : 'İstifadəçi';
+            const userSpan = document.getElementById('current-user');
+            const roleSpan = document.getElementById('user-role');
+            
+            if (userSpan) {
+                userSpan.textContent = userData.username || '\u0130stifad\u0259\u00e7i';
+            }
+            if (roleSpan) {
+                roleSpan.textContent = userData.role === 'admin' ? 'Admin' : '\u0130stifad\u0259\u00e7i';
+            }
         } catch (e) {
             console.error('Error parsing user data:', e);
         }
@@ -53,27 +61,26 @@ async function loadRoomDetails(roomId) {
         });
         const data = await response.json();
         
-        if (data.success) {
+        if (data.success && data.data) {
             const room = data.data;
             
-            // Update breadcrumb
-            document.getElementById('breadcrumb-room').textContent = room.name || 'Otaq';
+            // Update room info - only if elements exist
+            const roomName = document.getElementById('room-name');
+            const roomLocation = document.getElementById('room-location');
+            const roomCapacity = document.getElementById('room-capacity');
             
-            // Update room info
-            document.getElementById('room-name').textContent = room.name || '-';
-            document.getElementById('room-organization').textContent = room.organization_name || room.organization_id || '-';
-            document.getElementById('room-building').textContent = room.building_name || room.building_id || '-';
-            document.getElementById('room-description').textContent = room.description || '-';
-            document.getElementById('room-capacity').textContent = room.capacity || '-';
+            if (roomName) roomName.textContent = room.name || '-';
+            if (roomLocation) roomLocation.textContent = room.description || '-';
+            if (roomCapacity) roomCapacity.textContent = room.capacity || '-';
             
             // Load item count
             loadItemCount(roomId);
         } else {
-            showError('Otaq məlumatları yüklənə bilmədi');
+            showError('Otaq melumatlari yuklenmedi');
         }
     } catch (error) {
         console.error('Error loading room details:', error);
-        showError('Otaq məlumatlarını yüklərkən xəta baş verdi');
+        showError('Otaq melumatlarini yuklenmek alinmadi');
     }
 }
 
@@ -87,7 +94,10 @@ async function loadItemCount(roomId) {
         
         if (data.success) {
             const count = data.data ? data.data.length : 0;
-            document.getElementById('room-item-count').textContent = count;
+            const totalItems = document.getElementById('room-total-items');
+            if (totalItems) {
+                totalItems.textContent = count;
+            }
         }
     } catch (error) {
         console.error('Error loading item count:', error);
@@ -102,46 +112,36 @@ async function loadCategories() {
         });
         const data = await response.json();
         
-        if (data.success) {
-            const categories = new Set();
-            data.data.forEach(item => {
-                if (item.category) {
-                    categories.add(item.category);
-                }
-            });
+        if (data.success && data.data) {
+            // Extract unique categories from items
+            const categories = [...new Set(data.data.map(item => item.category).filter(c => c))];
+            const categorySelect = document.getElementById('room-item-category');
             
-            const categorySelect = document.getElementById('item-category-filter');
-            categorySelect.innerHTML = '<option value="">Bütün kateqoriyalar</option>';
-            
-            Array.from(categories).sort().forEach(cat => {
-                const option = document.createElement('option');
-                option.value = cat;
-                option.textContent = cat;
-                categorySelect.appendChild(option);
-            });
+            if (categorySelect) {
+                // Keep existing options and just ensure we have the categories
+                // The HTML already has the category options
+            }
         }
     } catch (error) {
         console.error('Error loading categories:', error);
     }
 }
 
-// Load items for room
+// Load all items for the room
 async function loadItems(roomId) {
     try {
         const params = new URLSearchParams();
-        params.append('page', currentPage);
         
-        if (currentFilters.search) {
-            params.append('search', currentFilters.search);
+        const searchInput = document.getElementById('room-search');
+        const statusFilter = document.getElementById('room-status-filter');
+        
+        if (searchInput && searchInput.value) {
+            params.append('search', searchInput.value);
         }
-        if (currentFilters.status) {
-            params.append('status', currentFilters.status);
-        }
-        if (currentFilters.category) {
-            params.append('category', currentFilters.category);
+        if (statusFilter && statusFilter.value) {
+            params.append('status', statusFilter.value);
         }
         
-        // Use the new endpoint: GET /api/rooms/:id/items
         const response = await fetch(`/api/rooms/${roomId}/items?${params.toString()}`, {
             credentials: 'include'
         });
@@ -149,22 +149,24 @@ async function loadItems(roomId) {
         
         if (data.success) {
             renderItems(data.data);
-            // For now, simple pagination
-            totalPages = 1;
-            updatePagination();
         }
     } catch (error) {
         console.error('Error loading items:', error);
-        showError('Elementləri yüklərkən xəta baş verdi');
+        showError('Elementler yuklenmek alinmadi');
     }
 }
 
 // Render items in table
 function renderItems(items) {
-    const tbody = document.getElementById('items-table-body');
+    const tbody = document.getElementById('room-items-table-body');
+    
+    if (!tbody) {
+        console.error('Error: room-items-table-body element not found');
+        return;
+    }
     
     if (!items || items.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="text-center">Bu otaqda heç bir inventar elementi yoxdur</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center">Hech bir element tapilmadi</td></tr>';
         return;
     }
     
@@ -173,17 +175,17 @@ function renderItems(items) {
     items.forEach(item => {
         const row = document.createElement('tr');
         row.innerHTML = `
-            <td>${escapeHtml(item.inventory_number || '-')}</td>
-            <td>${escapeHtml(item.location || '-')}</td>
-            <td><span class="badge badge-${getStatusClass(item.status)}">${escapeHtml(item.status || '-')}</span></td>
-            <td>${escapeHtml(item.responsible_person || '-')}</td>
-            <td>${escapeHtml(item.category || '-')}</td>
+            <td>${escapeHtml(item.inventory_number || '')}</td>
+            <td>${escapeHtml(item.location || '')}</td>
+            <td><span class="badge badge-${getStatusClass(item.status)}">${escapeHtml(item.status || '')}</span></td>
+            <td>${escapeHtml(item.category || '')}</td>
+            <td>${escapeHtml(item.responsible_person || '')}</td>
             <td>
-                <button class="btn btn-warning btn-sm" onclick="editItem('${item.id}')" title="Redaktə et">
-                    ✏️
+                <button class="btn btn-warning btn-sm" onclick="editItem('${item.id}')" title="Redakte et">
+                    \u270f\ufe0f
                 </button>
-                <button class="btn btn-danger btn-sm" onclick="deleteItem('${item.id}')" title="Sil">
-                    🗑️
+                <button class="btn btn-danger btn-sm" onclick="confirmDeleteItem('${item.id}', '${escapeHtml(item.inventory_number || '')}')" title="Sil">
+                    \ud83d\uddd1\ufe0f
                 </button>
             </td>
         `;
@@ -191,65 +193,69 @@ function renderItems(items) {
     });
 }
 
-// Apply item filters
+// Apply filters
 function applyItemFilters() {
-    currentFilters.search = document.getElementById('item-search-input').value;
-    currentFilters.status = document.getElementById('item-status-filter').value;
-    currentFilters.category = document.getElementById('item-category-filter').value;
-    currentPage = 1;
-    loadItems(currentRoomId);
+    const searchInput = document.getElementById('room-search');
+    const statusFilter = document.getElementById('room-status-filter');
+    
+    if (searchInput) currentFilters.search = searchInput.value;
+    if (statusFilter) currentFilters.status = statusFilter.value;
+    
+    if (currentRoomId) {
+        loadItems(currentRoomId);
+    }
 }
 
-// Reset item filters
-function resetItemFilters() {
-    document.getElementById('item-search-input').value = '';
-    document.getElementById('item-status-filter').value = '';
-    document.getElementById('item-category-filter').value = '';
+// Reset filters
+function resetFilters() {
+    const searchInput = document.getElementById('room-search');
+    const statusFilter = document.getElementById('room-status-filter');
+    
+    if (searchInput) searchInput.value = '';
+    if (statusFilter) statusFilter.value = '';
+    
     currentFilters = {
         search: '',
         status: '',
         category: ''
     };
-    currentPage = 1;
-    loadItems(currentRoomId);
-}
-
-// Pagination functions
-function previousPage() {
-    if (currentPage > 1) {
-        currentPage--;
+    
+    if (currentRoomId) {
         loadItems(currentRoomId);
     }
-}
-
-function nextPage() {
-    if (currentPage < totalPages) {
-        currentPage++;
-        loadItems(currentRoomId);
-    }
-}
-
-function updatePagination() {
-    document.getElementById('page-info').textContent = `Səhifə ${currentPage} / ${totalPages}`;
-    document.getElementById('prev-page').disabled = currentPage <= 1;
-    document.getElementById('next-page').disabled = currentPage >= totalPages;
 }
 
 // Open add item modal
 function openAddItemModal() {
-    document.getElementById('modal-title').textContent = 'Yeni Element Əlavə Et';
-    document.getElementById('item-id').value = '';
-    document.getElementById('inventory-number').value = '';
-    document.getElementById('location').value = '';
-    document.getElementById('status').value = '';
-    document.getElementById('category').value = '';
-    document.getElementById('responsible-person').value = '';
-    document.getElementById('add-item-modal').style.display = 'block';
+    const modal = document.getElementById('add-item-modal');
+    if (!modal) {
+        console.error('Error: add-item-modal element not found');
+        return;
+    }
+    
+    // Clear form
+    const numberInput = document.getElementById('room-item-number');
+    const locationInput = document.getElementById('room-item-location');
+    const statusSelect = document.getElementById('room-item-status');
+    const categorySelect = document.getElementById('room-item-category');
+    const responsibleInput = document.getElementById('room-item-responsible');
+    
+    if (numberInput) numberInput.value = '';
+    if (locationInput) locationInput.value = '';
+    if (statusSelect) statusSelect.value = '';
+    if (categorySelect) categorySelect.value = '';
+    if (responsibleInput) responsibleInput.value = '';
+    
+    // Show modal
+    modal.classList.add('active');
 }
 
 // Close item modal
-function closeItemModal() {
-    document.getElementById('add-item-modal').style.display = 'none';
+function closeAddItemModal() {
+    const modal = document.getElementById('add-item-modal');
+    if (modal) {
+        modal.classList.remove('active');
+    }
 }
 
 // Edit item
@@ -262,50 +268,78 @@ async function editItem(itemId) {
         
         if (data.success) {
             const item = data.data;
-            document.getElementById('modal-title').textContent = 'Elementi Redaktə Et';
-            document.getElementById('item-id').value = item.id;
-            document.getElementById('inventory-number').value = item.inventory_number || '';
-            document.getElementById('location').value = item.location || '';
-            document.getElementById('status').value = item.status || '';
-            document.getElementById('category').value = item.category || '';
-            document.getElementById('responsible-person').value = item.responsible_person || '';
-            document.getElementById('add-item-modal').style.display = 'block';
+            const modal = document.getElementById('add-item-modal');
+            
+            if (!modal) {
+                console.error('Error: add-item-modal element not found');
+                return;
+            }
+            
+            // Set form values
+            const numberInput = document.getElementById('room-item-number');
+            const locationInput = document.getElementById('room-item-location');
+            const statusSelect = document.getElementById('room-item-status');
+            const categorySelect = document.getElementById('room-item-category');
+            const responsibleInput = document.getElementById('room-item-responsible');
+            
+            if (numberInput) numberInput.value = item.inventory_number || '';
+            if (locationInput) locationInput.value = item.location || '';
+            if (statusSelect) statusSelect.value = item.status || '';
+            if (categorySelect) categorySelect.value = item.category || '';
+            if (responsibleInput) responsibleInput.value = item.responsible_person || '';
+            
+            // Store item ID for update
+            const form = document.getElementById('add-room-item-form');
+            if (form) {
+                form.dataset.editingId = itemId;
+            }
+            
+            // Show modal
+            modal.classList.add('active');
         }
     } catch (error) {
-        console.error('Error loading item for edit:', error);
-        showError('Elementi yüklərkən xəta baş verdi');
+        console.error('Error loading item:', error);
+        showError('Element yuklenmek alinmadi');
     }
 }
 
 // Save item (create or update)
 async function saveItem() {
-    const itemId = document.getElementById('item-id').value;
-    const inventoryNumber = document.getElementById('inventory-number').value.trim();
-    const location = document.getElementById('location').value.trim();
-    const status = document.getElementById('status').value;
-    const category = document.getElementById('category').value.trim();
-    const responsiblePerson = document.getElementById('responsible-person').value.trim();
+    const numberInput = document.getElementById('room-item-number');
+    const locationInput = document.getElementById('room-item-location');
+    const statusSelect = document.getElementById('room-item-status');
+    const categorySelect = document.getElementById('room-item-category');
+    const responsibleInput = document.getElementById('room-item-responsible');
     
-    if (!inventoryNumber) {
-        showError('İnventar nömrəsi mütləq doldurulmalıdır');
+    const inventory_number = numberInput?.value?.trim() || '';
+    const location = locationInput?.value?.trim() || '';
+    const status = statusSelect?.value || '';
+    const category = categorySelect?.value || '';
+    const responsible_person = responsibleInput?.value?.trim() || '';
+    
+    if (!inventory_number) {
+        showError('Inventar nomresi mutleq doldurulmalidir');
         return;
     }
     
     try {
         const itemData = {
-            inventory_number: inventoryNumber,
+            inventory_number,
             location,
             status,
             category,
-            responsible_person: responsiblePerson,
+            responsible_person,
             room_id: currentRoomId
         };
+        
+        const form = document.getElementById('add-room-item-form');
+        const editingId = form?.dataset?.editingId;
         
         let url = '/api/inventory-items';
         let method = 'POST';
         
-        if (itemId) {
-            url = `/api/inventory-items/${itemId}`;
+        if (editingId) {
+            url = `/api/inventory-items/${editingId}`;
             method = 'PUT';
         }
         
@@ -321,34 +355,29 @@ async function saveItem() {
         const data = await response.json();
         
         if (data.success) {
-            closeItemModal();
-            loadItems(currentRoomId);
-            loadItemCount(currentRoomId);
-            showSuccess(itemId ? 'Element uğurla yeniləndi' : 'Element uğurla əlavə edildi');
+            closeAddItemModal();
+            if (currentRoomId) {
+                loadItems(currentRoomId);
+            }
+            showSuccess(editingId ? 'Element ugurla yenilendi' : 'Element ugurla elave edildi');
         } else {
-            showError(data.error || 'Xəta baş verdi');
+            showError(data.error || 'Xeta bas verdi');
         }
     } catch (error) {
         console.error('Error saving item:', error);
-        showError('Elementi saxlayarkən xəta baş verdi');
+        showError('Elementi saxlayarken xeta bas verdi');
+    }
+}
+
+// Confirm delete item
+function confirmDeleteItem(itemId, itemNumber) {
+    if (confirm(`"${itemNumber}" elementini silmek istediyinize eminsiniz?`)) {
+        deleteItem(itemId);
     }
 }
 
 // Delete item
-function deleteItem(itemId) {
-    document.getElementById('item-id').value = itemId;
-    document.getElementById('delete-modal').style.display = 'block';
-}
-
-// Close delete modal
-function closeDeleteModal() {
-    document.getElementById('delete-modal').style.display = 'none';
-}
-
-// Confirm delete
-async function confirmDelete() {
-    const itemId = document.getElementById('item-id').value;
-    
+async function deleteItem(itemId) {
     try {
         const response = await fetch(`/api/inventory-items/${itemId}`, {
             method: 'DELETE',
@@ -358,73 +387,34 @@ async function confirmDelete() {
         const data = await response.json();
         
         if (data.success) {
-            closeDeleteModal();
-            loadItems(currentRoomId);
-            loadItemCount(currentRoomId);
-            showSuccess('Element uğurla silindi');
+            if (currentRoomId) {
+                loadItems(currentRoomId);
+            }
+            showSuccess('Element ugurla silindi');
         } else {
-            showError(data.error || 'Xəta baş verdi');
+            showError(data.error || 'Xeta bas verdi');
         }
     } catch (error) {
         console.error('Error deleting item:', error);
-        showError('Elementi silərkən xəta baş verdi');
+        showError('Elementi silmek alinmadi');
     }
 }
 
-// Open import modal
-function openImportModal() {
-    document.getElementById('excel-file').value = '';
-    document.getElementById('import-modal').style.display = 'block';
+// Filter room items
+function filterRoomItems() {
+    if (currentRoomId) {
+        loadItems(currentRoomId);
+    }
 }
 
-// Close import modal
-function closeImportModal() {
-    document.getElementById('import-modal').style.display = 'none';
-}
-
-// Import Excel
-async function importExcel() {
-    const fileInput = document.getElementById('excel-file');
-    const file = fileInput.files[0];
-    
-    if (!file) {
-        showError('Zəhmət olmasa, bir fayl seçin');
-        return;
-    }
-    
-    try {
-        const formData = new FormData();
-        formData.append('file', file);
-        
-        const response = await fetch('/api/inventory-items/import', {
-            method: 'POST',
-            body: formData,
-            credentials: 'include'
-        });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-            closeImportModal();
-            loadItems(currentRoomId);
-            loadItemCount(currentRoomId);
-            showSuccess(`${data.count || 0} element uğurla idxal edildi`);
-            
-            if (data.errors && data.errors.length > 0) {
-                alert(`Uğurla idxal edildi, lakin ${data.errors.length} xəta var. Konsola baxın.`);
-                console.error('Import errors:', data.errors);
-            }
-        } else {
-            showError(data.error || 'İdxal zamanı xəta baş verdi');
-        }
-    } catch (error) {
-        console.error('Error importing Excel:', error);
-        showError('Excel faylını idxal edərkən xəta baş verdi');
-    }
+// Go back to rooms page
+function goBack() {
+    window.location.href = '/admin/rooms';
 }
 
 // Helper functions
 function escapeHtml(text) {
+    if (!text) return '';
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
@@ -445,7 +435,7 @@ function showSuccess(message) {
 }
 
 function showError(message) {
-    alert(`Xəta: ${message}`);
+    alert(`Xeta: ${message}`);
 }
 
 function getCookie(name) {
@@ -455,9 +445,9 @@ function getCookie(name) {
     return null;
 }
 
-// Logout function
-function logout() {
-    if (confirm('Çıxış etmək istəyirsiz?')) {
-        window.location.href = '/logout';
+// Close modals on outside click
+window.onclick = function(event) {
+    if (event.target.classList.contains('modal')) {
+        event.target.classList.remove('active');
     }
-}
+};
