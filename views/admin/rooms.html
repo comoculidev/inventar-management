@@ -103,7 +103,7 @@
                     </div>
                     <div class="form-group">
                         <label for="organization-room-filter">Təşkilat</label>
-                        <select id="organization-room-filter">
+                        <select id="organization-room-filter" onchange="loadBuildingsForRooms(this.value)">
                             <option value="">Bütün təşkilatlar</option>
                         </select>
                     </div>
@@ -129,6 +129,7 @@
                                     <th>Otaq Adı</th>
                                     <th>Bina</th>
                                     <th>Təşkilat</th>
+                                    <th>Elementlər</th>
                                     <th>Tutumu</th>
                                     <th>Təsviri</th>
                                     <th>Əməliyyatlar</th>
@@ -136,7 +137,7 @@
                             </thead>
                             <tbody id="rooms-table-body">
                                 <tr>
-                                    <td colspan="6" class="text-center">Yüklənir...</td>
+                                    <td colspan="7" class="text-center">Yüklənir...</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -150,20 +151,27 @@
     <div class="modal" id="add-room-modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>Yeni Otaq</h3>
+                <h3 id="room-modal-title">Yeni Otaq</h3>
                 <button class="modal-close" onclick="closeAddRoomModal()">&times;</button>
             </div>
             <div class="modal-body">
                 <form id="add-room-form">
+                    <input type="hidden" id="room-id">
                     <div class="form-group">
-                        <label for="room-name">Otaq Adı</label>
+                        <label for="room-name">Otaq Adı *</label>
                         <div class="input-wrapper">
                             <i class="fas fa-door-open"></i>
                             <input type="text" id="room-name" required>
                         </div>
                     </div>
                     <div class="form-group">
-                        <label for="room-building">Bina</label>
+                        <label for="room-organization">Təşkilat *</label>
+                        <select id="room-organization" required onchange="loadBuildingsForRoomModal(this.value)">
+                            <option value="">Seçin</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="room-building">Bina *</label>
                         <select id="room-building" required>
                             <option value="">Seçin</option>
                         </select>
@@ -199,6 +207,27 @@
                 </button>
                 <button type="button" class="btn btn-primary" onclick="saveRoom()">
                     <i class="fas fa-save"></i> Yadda saxla
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Room Modal -->
+    <div class="modal" id="delete-room-modal">
+        <div class="modal-content modal-sm">
+            <div class="modal-header">
+                <h3>Otağı Sil</h3>
+                <button class="modal-close" onclick="closeDeleteRoomModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="delete-room-info">Bu otağı silmək istədiyinizə əminsiniz?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeDeleteRoomModal()">
+                    Ləğv et
+                </button>
+                <button type="button" class="btn btn-danger" onclick="confirmDeleteRoom()">
+                    <i class="fas fa-trash"></i> Sil
                 </button>
             </div>
         </div>
