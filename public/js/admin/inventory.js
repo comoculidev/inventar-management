@@ -298,7 +298,7 @@ function renderInventoryTable(items) {
     
     if (items.length === 0) {
         const row = document.createElement('tr');
-        row.innerHTML = '<td colspan="7" class="text-center">He\u0017 bir \u0259\u015fya tap\u0131lmad\u0131</td>';
+        row.innerHTML = '<td colspan="9" class="text-center">He\u0017 bir \u0259\u015fya tap\u0131lmad\u0131</td>';
         tbody.appendChild(row);
         return;
     }
@@ -311,7 +311,9 @@ function renderInventoryTable(items) {
             <td><span class="badge badge-${getStatusBadgeClass(item.status)}">${escapeHtml(item.status || '-')}</span></td>
             <td>${escapeHtml(item.category || '-')}</td>
             <td>${escapeHtml(item.responsible_person || '-')}</td>
-            <td>${escapeHtml(item.room_name || item.room_id || '-')}</td>
+            <td>${escapeHtml(item.organization_name || '-')}</td>
+            <td>${escapeHtml(item.building_name || '-')}</td>
+            <td>${escapeHtml(item.room_name || '-')}</td>
             <td class="actions">
                 <button class="btn btn-info btn-icon" onclick="openEditItemModal('${item.id}')" title="Redakt\u0259 et">
                     \u270f\ufe0f
@@ -690,9 +692,9 @@ async function exportToExcel() {
                 'Status': item.status || '',
                 'Kateqoriya': item.category || '',
                 'M\u0259sul \u015e\u0259xs': item.responsible_person || '',
-                'Otaq': item.room_name || '',
+                'T\u0259\u015fkilat': item.organization_name || '',
                 'Bina': item.building_name || '',
-                'T\u0259\u015fkilat': item.organization_name || ''
+                'Otaq': item.room_name || ''
             }));
             
             // Create worksheet

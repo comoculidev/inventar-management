@@ -3,28 +3,61 @@ const { v4: uuidv4 } = require('uuid');
 
 class InventoryItem {
     static async getAll() {
-        const result = await query('SELECT * FROM inventory_items ORDER BY inventory_number ASC');
+        const result = await query(`
+            SELECT ii.*, 
+                   r.name as room_name, 
+                   b.name as building_name, 
+                   o.name as organization_name
+            FROM inventory_items ii
+            LEFT JOIN rooms r ON ii.room_id = r.id
+            LEFT JOIN buildings b ON r.building_id = b.id
+            LEFT JOIN organizations o ON b.organization_id = o.id
+            ORDER BY ii.inventory_number ASC
+        `);
         return result.rows;
     }
 
     static async getById(id) {
-        const result = await query('SELECT * FROM inventory_items WHERE id = $1', [id]);
+        const result = await query(`
+            SELECT ii.*, 
+                   r.name as room_name, 
+                   b.name as building_name, 
+                   o.name as organization_name
+            FROM inventory_items ii
+            LEFT JOIN rooms r ON ii.room_id = r.id
+            LEFT JOIN buildings b ON r.building_id = b.id
+            LEFT JOIN organizations o ON b.organization_id = o.id
+            WHERE ii.id = $1
+        `, [id]);
         return result.rows[0];
     }
 
     static async getByRoom(roomId) {
-        const result = await query(
-            'SELECT * FROM inventory_items WHERE room_id = $1 ORDER BY inventory_number ASC',
-            [roomId]
-        );
+        const result = await query(`
+            SELECT ii.*, 
+                   r.name as room_name, 
+                   b.name as building_name, 
+                   o.name as organization_name
+            FROM inventory_items ii
+            JOIN rooms r ON ii.room_id = r.id
+            JOIN buildings b ON r.building_id = b.id
+            JOIN organizations o ON b.organization_id = o.id
+            WHERE ii.room_id = $1
+            ORDER BY ii.inventory_number ASC
+        `, [roomId]);
         return result.rows;
     }
 
     static async getByBuilding(buildingId) {
         const result = await query(`
-            SELECT ii.* 
+            SELECT ii.*, 
+                   r.name as room_name, 
+                   b.name as building_name, 
+                   o.name as organization_name
             FROM inventory_items ii
             JOIN rooms r ON ii.room_id = r.id
+            JOIN buildings b ON r.building_id = b.id
+            JOIN organizations o ON b.organization_id = o.id
             WHERE r.building_id = $1
             ORDER BY ii.inventory_number ASC
         `, [buildingId]);
@@ -33,10 +66,14 @@ class InventoryItem {
 
     static async getByOrganization(organizationId) {
         const result = await query(`
-            SELECT ii.* 
+            SELECT ii.*, 
+                   r.name as room_name, 
+                   b.name as building_name, 
+                   o.name as organization_name
             FROM inventory_items ii
             JOIN rooms r ON ii.room_id = r.id
             JOIN buildings b ON r.building_id = b.id
+            JOIN organizations o ON b.organization_id = o.id
             WHERE b.organization_id = $1
             ORDER BY ii.inventory_number ASC
         `, [organizationId]);
@@ -69,13 +106,20 @@ class InventoryItem {
 
     static async search(searchTerm) {
         const result = await query(`
-            SELECT * FROM inventory_items 
-            WHERE inventory_number ILIKE $1 
-               OR location ILIKE $1 
-               OR status ILIKE $1 
-               OR responsible_person ILIKE $1 
-               OR category ILIKE $1
-            ORDER BY inventory_number ASC
+            SELECT ii.*, 
+                   r.name as room_name, 
+                   b.name as building_name, 
+                   o.name as organization_name
+            FROM inventory_items ii
+            LEFT JOIN rooms r ON ii.room_id = r.id
+            LEFT JOIN buildings b ON r.building_id = b.id
+            LEFT JOIN organizations o ON b.organization_id = o.id
+            WHERE ii.inventory_number ILIKE $1 
+               OR ii.location ILIKE $1 
+               OR ii.status ILIKE $1 
+               OR ii.responsible_person ILIKE $1 
+               OR ii.category ILIKE $1
+            ORDER BY ii.inventory_number ASC
         `, [`%${searchTerm}%`]);
         return result.rows;
     }
