@@ -1,7 +1,9 @@
 const InventoryItem = require('../models/inventoryItem');
 const Room = require('../models/room');
+const Building = require('../models/building');
+const Organization = require('../models/organization');
 const multer = require('multer');
-const { parseExcelBuffer, validateItems } = require('../utils/excelImport');
+const { parseExcelBuffer, validateItems, resolveRoomId } = require('../utils/excelImport');
 const HistoryLog = require('../models/historyLog');
 
 // Configure multer for file uploads
@@ -255,13 +257,16 @@ class InventoryItemsController {
 
     static async filter(req, res) {
         try {
-            const { organizationId, buildingId, category, status } = req.query;
+            const { organizationId, buildingId, category, status, search, page = 1, limit = 20 } = req.query;
             
             const items = await InventoryItem.filter({
                 organizationId,
                 buildingId,
                 category,
-                status
+                status,
+                search,
+                page,
+                limit
             });
             
             res.json({
@@ -349,17 +354,63 @@ class InventoryItemsController {
             }
             
             const createdItems = [];
+            const invalidItems = [];
             const user = req.user || { id: 'system', username: 'system' };
             
             for (const itemData of validItems) {
-                // Validate room exists
-                const room = await Room.getById(itemData.room_id);
-                if (!room) {
-                    console.warn(`Room not found for item: ${itemData.inventory_number}`);
+                // Try to resolve room_id if not provided or if we have name-based lookup
+                let resolvedRoomId = itemData.room_id;
+                
+                // If room_id is not provided but we have room_name, try to resolve it
+                if (!resolvedRoomId && itemData.room_name) {
+                    // Try to find room by name
+                    const allRooms = await Room.getAll();
+                    const roomByName = allRooms.find(r => r.name === itemData.room_name);
+                    if (roomByName) {
+                        resolvedRoomId = roomByName.id;
+                    } else if (itemData.organization_name && itemData.building_name) {
+                        // Try to find by organization and building
+                        const orgs = await Organization.getByName(itemData.organization_name);
+                        if (orgs && orgs.length > 0) {
+                            const buildings = await Building.getByOrganization(orgs[0].id);
+                            const building = buildings.find(b => b.name === itemData.building_name);
+                            if (building) {
+                                const rooms = await Room.getByBuilding(building.id);
+                                const room = rooms.find(r => r.name === itemData.room_name);
+                                if (room) {
+                                    resolvedRoomId = room.id;
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                if (!resolvedRoomId) {
+                    invalidItems.push({
+                        ...itemData,
+                        error: 'Could not resolve room ID from provided data'
+                    });
                     continue;
                 }
                 
-                const item = await InventoryItem.create(itemData);
+                // Validate room exists
+                const room = await Room.getById(resolvedRoomId);
+                if (!room) {
+                    invalidItems.push({
+                        ...itemData,
+                        error: `Room with ID ${resolvedRoomId} not found`
+                    });
+                    continue;
+                }
+                
+                const item = await InventoryItem.create({
+                    inventory_number: itemData.inventory_number,
+                    location: itemData.location,
+                    status: itemData.status,
+                    responsible_person: itemData.responsible_person,
+                    category: itemData.category,
+                    room_id: resolvedRoomId
+                });
                 createdItems.push(item);
                 
                 // Log creation
@@ -378,7 +429,10 @@ class InventoryItemsController {
                 success: true,
                 data: createdItems,
                 count: createdItems.length,
-                errors
+                invalidItems,
+                message: invalidItems.length > 0 
+                    ? `${createdItems.length} items imported, ${invalidItems.length} failed`
+                    : `${createdItems.length} items imported successfully`
             });
         } catch (error) {
             console.error('Error importing Excel file:', error);
