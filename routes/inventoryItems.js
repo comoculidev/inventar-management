@@ -17,6 +17,9 @@ router.get('/search', InventoryItemsController.search);
 // GET /api/inventory-items/filter - Filter items
 router.get('/filter', InventoryItemsController.filter);
 
+// GET /api/inventory-items/export - Export items to Excel
+router.get('/export', InventoryItemsController.exportExcel);
+
 // POST /api/inventory-items - Create new inventory item
 router.post('/', InventoryItemsController.create);
 

@@ -149,6 +149,17 @@
                                 <option value="active">Aktiv</option>
                                 <option value="inactive">Qeyri-aktiv</option>
                                 <option value="maintenance">Təmirdə</option>
+                                <option value="lost">İtkin</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="room-category-filter">Kateqoriya</label>
+                            <select id="room-category-filter">
+                                <option value="">Bütün kateqoriyalar</option>
+                                <option value="mebel">Mebel</option>
+                                <option value="kompüter">Kompüter avadanlığı</option>
+                                <option value="ofis">Ofis avadanlığı</option>
+                                <option value="diger">Diger</option>
                             </select>
                         </div>
                         <button type="button" class="btn btn-primary" onclick="filterRoomItems()">
@@ -181,53 +192,81 @@
 
     <!-- Add Item Modal -->
     <div class="modal" id="add-item-modal">
-        <div class="modal-content">
+        <div class="modal-content modal-lg">
             <div class="modal-header">
-                <h3>Bu Otağa Yeni Element Əlavə Et</h3>
+                <h3 id="modal-title">Bu Otağa Yeni Element Əlavə Et</h3>
                 <button class="modal-close" onclick="closeAddItemModal()">&times;</button>
             </div>
             <div class="modal-body">
                 <form id="add-room-item-form">
-                    <div class="form-group">
-                        <label for="room-item-number">İnventar Nömrəsi</label>
-                        <div class="input-wrapper">
-                            <i class="fas fa-hashtag"></i>
-                            <input type="text" id="room-item-number" required>
+                    <input type="hidden" id="room-item-id">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="room-item-number">İnventar Nömrəsi *</label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-hashtag"></i>
+                                <input type="text" id="room-item-number" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="room-item-location">Yerləşdə</label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-map-marker-alt"></i>
+                                <input type="text" id="room-item-location">
+                            </div>
                         </div>
                     </div>
-                    <div class="form-group">
-                        <label for="room-item-location">Yerləşdə</label>
-                        <div class="input-wrapper">
-                            <i class="fas fa-map-marker-alt"></i>
-                            <input type="text" id="room-item-location" required>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="room-item-organization">Təşkilat *</label>
+                            <select id="room-item-organization" required onchange="loadBuildingsForRoomItem(this.value)">
+                                <option value="">Seçin</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="room-item-building">Bina *</label>
+                            <select id="room-item-building" required onchange="loadRoomsForRoomItem(this.value)">
+                                <option value="">Seçin</option>
+                            </select>
                         </div>
                     </div>
+                    
+                    <div class="form-group">
+                        <label for="room-item-room">Otaq *</label>
+                        <select id="room-item-room" required>
+                            <option value="">Seçin</option>
+                        </select>
+                    </div>
+                    
                     <div class="form-row">
                         <div class="form-group">
                             <label for="room-item-status">Status</label>
-                            <select id="room-item-status" required>
+                            <select id="room-item-status">
                                 <option value="">Seçin</option>
                                 <option value="active">Aktiv</option>
                                 <option value="inactive">Qeyri-aktiv</option>
                                 <option value="maintenance">Təmirdə</option>
+                                <option value="lost">İtkin</option>
                             </select>
                         </div>
                         <div class="form-group">
                             <label for="room-item-category">Kateqoriya</label>
-                            <select id="room-item-category" required>
+                            <select id="room-item-category">
                                 <option value="">Seçin</option>
                                 <option value="mebel">Mebel</option>
                                 <option value="kompüter">Kompüter avadanlığı</option>
                                 <option value="ofis">Ofis avadanlığı</option>
-                                <option value="digər">Digər</option>
+                                <option value="diger">Diger</option>
                             </select>
                         </div>
                     </div>
+                    
                     <div class="form-group">
                         <label for="room-item-responsible">Məsul Şəxs</label>
                         <div class="input-wrapper">
                             <i class="fas fa-user"></i>
-                            <input type="text" id="room-item-responsible" required>
+                            <input type="text" id="room-item-responsible">
                         </div>
                     </div>
                 </form>
@@ -238,6 +277,27 @@
                 </button>
                 <button type="button" class="btn btn-primary" onclick="saveItem()">
                     <i class="fas fa-save"></i> Yadda saxla
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal" id="delete-modal">
+        <div class="modal-content modal-sm">
+            <div class="modal-header">
+                <h3>Elementi Sil</h3>
+                <button class="modal-close" onclick="closeDeleteModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="delete-item-info">Bu elementi silmək istədiyinizə əminsiniz?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeDeleteModal()">
+                    Ləğv et
+                </button>
+                <button type="button" class="btn btn-danger" onclick="confirmDelete()">
+                    <i class="fas fa-trash"></i> Sil
                 </button>
             </div>
         </div>
@@ -279,7 +339,14 @@
             document.getElementById('add-item-modal').classList.remove('active');
         }
         
-
+        function openDeleteModal() {
+            document.getElementById('delete-modal').classList.add('active');
+        }
+        
+        function closeDeleteModal() {
+            document.getElementById('delete-modal').classList.remove('active');
+        }
+        
         // Filter room items function
         function filterRoomItems() {
             if (typeof filterItems === 'function') {
