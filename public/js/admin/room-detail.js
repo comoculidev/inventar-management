@@ -1,10 +1,15 @@
 // Room Detail Page JavaScript
 let currentRoomId = null;
+let currentRoomInfo = null;
 let currentFilters = {
     search: '',
     status: '',
     category: ''
 };
+
+let organizations = [];
+let buildings = [];
+let rooms = [];
 
 // Get room ID from URL path: /organization/building/room/:id
 document.addEventListener('DOMContentLoaded', function() {
@@ -16,7 +21,7 @@ document.addEventListener('DOMContentLoaded', function() {
         loadRoomDetails(currentRoomId);
         loadItems(currentRoomId);
         loadUserInfo();
-        loadCategories();
+        loadOrganizationsForModal();
     } else {
         showError('Otaq ID tapilmadi');
     }
@@ -42,14 +47,108 @@ function loadUserInfo() {
             const roleSpan = document.getElementById('user-role');
             
             if (userSpan) {
-                userSpan.textContent = userData.username || '\u0130stifad\u0259\u00e7i';
+                userSpan.textContent = userData.username || '\u001dstifad\u0019\u0007i';
             }
             if (roleSpan) {
-                roleSpan.textContent = userData.role === 'admin' ? 'Admin' : '\u0130stifad\u0259\u00e7i';
+                roleSpan.textContent = userData.role === 'admin' ? 'Admin' : '\u001dstifad\u0019\u0007i';
             }
         } catch (e) {
             console.error('Error parsing user data:', e);
         }
+    }
+}
+
+// Load organizations for modal dropdown
+async function loadOrganizationsForModal() {
+    try {
+        const response = await fetch('/api/organizations');
+        const data = await response.json();
+        
+        if (data.success) {
+            organizations = data.data;
+            const select = document.getElementById('room-item-organization');
+            if (select) {
+                select.innerHTML = '<option value="">T\u0019\u00015fkilat se\u0007in</option>';
+                data.data.forEach(org => {
+                    const option = document.createElement('option');
+                    option.value = org.id;
+                    option.textContent = org.name;
+                    select.appendChild(option);
+                });
+                
+                // Load buildings when organization is selected
+                select.addEventListener('change', function() {
+                    loadBuildingsForModal(this.value);
+                });
+            }
+        }
+    } catch (error) {
+        console.error('Error loading organizations for modal:', error);
+    }
+}
+
+// Load buildings for modal dropdown based on organization
+async function loadBuildingsForModal(organizationId) {
+    try {
+        const url = organizationId 
+            ? `/api/buildings/organization/${organizationId}`
+            : '/api/buildings';
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        if (data.success) {
+            buildings = data.data;
+            const select = document.getElementById('room-item-building');
+            if (select) {
+                select.innerHTML = '<option value="">Bina se\u0007in</option>';
+                data.data.forEach(building => {
+                    const option = document.createElement('option');
+                    option.value = building.id;
+                    option.textContent = building.name;
+                    select.appendChild(option);
+                });
+                
+                // Reset room dropdown
+                const roomSelect = document.getElementById('room-item-room');
+                if (roomSelect) {
+                    roomSelect.innerHTML = '<option value="">Otaq se\u0007in</option>';
+                }
+                
+                // Load rooms when building is selected
+                select.addEventListener('change', function() {
+                    loadRoomsForModal(this.value);
+                });
+            }
+        }
+    } catch (error) {
+        console.error('Error loading buildings for modal:', error);
+    }
+}
+
+// Load rooms for modal dropdown based on building
+async function loadRoomsForModal(buildingId) {
+    try {
+        const url = buildingId 
+            ? `/api/rooms/building/${buildingId}`
+            : '/api/rooms';
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        if (data.success) {
+            rooms = data.data;
+            const select = document.getElementById('room-item-room');
+            if (select) {
+                select.innerHTML = '<option value="">Otaq se\u0007in</option>';
+                data.data.forEach(room => {
+                    const option = document.createElement('option');
+                    option.value = room.id;
+                    option.textContent = room.name;
+                    select.appendChild(option);
+                });
+            }
+        }
+    } catch (error) {
+        console.error('Error loading rooms for modal:', error);
     }
 }
 
@@ -62,6 +161,7 @@ async function loadRoomDetails(roomId) {
         const data = await response.json();
         
         if (data.success && data.data) {
+            currentRoomInfo = data.data;
             const room = data.data;
             
             // Update room info - only if elements exist
@@ -73,8 +173,9 @@ async function loadRoomDetails(roomId) {
             if (roomLocation) roomLocation.textContent = room.description || '-';
             if (roomCapacity) roomCapacity.textContent = room.capacity || '-';
             
-            // Load item count
+            // Load item count and stats
             loadItemCount(roomId);
+            loadItemStats(roomId);
         } else {
             showError('Otaq melumatlari yuklenmedi');
         }
@@ -104,26 +205,27 @@ async function loadItemCount(roomId) {
     }
 }
 
-// Load categories for filter
-async function loadCategories() {
+// Load item stats for room
+async function loadItemStats(roomId) {
     try {
-        const response = await fetch('/api/inventory-items', {
+        const response = await fetch(`/api/rooms/${roomId}/items`, {
             credentials: 'include'
         });
         const data = await response.json();
         
-        if (data.success && data.data) {
-            // Extract unique categories from items
-            const categories = [...new Set(data.data.map(item => item.category).filter(c => c))];
-            const categorySelect = document.getElementById('room-item-category');
+        if (data.success) {
+            const items = data.data || [];
+            const activeCount = items.filter(i => i.status === 'active').length;
+            const inactiveCount = items.filter(i => i.status === 'inactive').length;
             
-            if (categorySelect) {
-                // Keep existing options and just ensure we have the categories
-                // The HTML already has the category options
-            }
+            const activeEl = document.getElementById('room-active-items');
+            const inactiveEl = document.getElementById('room-inactive-items');
+            
+            if (activeEl) activeEl.textContent = activeCount;
+            if (inactiveEl) inactiveEl.textContent = inactiveCount;
         }
     } catch (error) {
-        console.error('Error loading categories:', error);
+        console.error('Error loading item stats:', error);
     }
 }
 
@@ -239,15 +341,64 @@ function openAddItemModal() {
     const statusSelect = document.getElementById('room-item-status');
     const categorySelect = document.getElementById('room-item-category');
     const responsibleInput = document.getElementById('room-item-responsible');
+    const orgSelect = document.getElementById('room-item-organization');
+    const buildingSelect = document.getElementById('room-item-building');
+    const roomSelect = document.getElementById('room-item-room');
     
     if (numberInput) numberInput.value = '';
     if (locationInput) locationInput.value = '';
     if (statusSelect) statusSelect.value = '';
     if (categorySelect) categorySelect.value = '';
     if (responsibleInput) responsibleInput.value = '';
+    if (orgSelect) orgSelect.value = '';
+    if (buildingSelect) buildingSelect.innerHTML = '<option value="">Bina se\u0007in</option>';
+    if (roomSelect) roomSelect.innerHTML = '<option value="">Otaq se\u0007in</option>';
+    
+    // Pre-select current room if we have room info
+    if (currentRoomInfo && roomSelect) {
+        // We need to load the building and organization for this room
+        loadRoomHierarchyForModal();
+    }
     
     // Show modal
     modal.classList.add('active');
+}
+
+// Load room hierarchy for modal
+async function loadRoomHierarchyForModal() {
+    if (!currentRoomInfo) return;
+    
+    try {
+        // Get building for this room
+        const buildingResponse = await fetch(`/api/buildings/${currentRoomInfo.building_id}`);
+        const buildingData = await buildingResponse.json();
+        
+        if (buildingData.success && buildingData.data) {
+            const building = buildingData.data;
+            
+            // Set organization
+            const orgSelect = document.getElementById('room-item-organization');
+            if (orgSelect) {
+                orgSelect.value = building.organization_id;
+                await loadBuildingsForModal(building.organization_id);
+            }
+            
+            // Set building
+            const buildingSelect = document.getElementById('room-item-building');
+            if (buildingSelect) {
+                buildingSelect.value = building.id;
+                await loadRoomsForModal(building.id);
+            }
+            
+            // Set room
+            const roomSelect = document.getElementById('room-item-room');
+            if (roomSelect) {
+                roomSelect.value = currentRoomInfo.id;
+            }
+        }
+    } catch (error) {
+        console.error('Error loading room hierarchy:', error);
+    }
 }
 
 // Close item modal
@@ -288,6 +439,44 @@ async function editItem(itemId) {
             if (categorySelect) categorySelect.value = item.category || '';
             if (responsibleInput) responsibleInput.value = item.responsible_person || '';
             
+            // Load organization, building, room for the item
+            if (item.room_id) {
+                const roomResponse = await fetch(`/api/rooms/${item.room_id}`);
+                const roomData = await roomResponse.json();
+                
+                if (roomData.success && roomData.data) {
+                    const room = roomData.data;
+                    
+                    // Get building details
+                    const buildingResponse = await fetch(`/api/buildings/${room.building_id}`);
+                    const buildingData = await buildingResponse.json();
+                    
+                    if (buildingData.success && buildingData.data) {
+                        const building = buildingData.data;
+                        
+                        // Set organization
+                        const orgSelect = document.getElementById('room-item-organization');
+                        if (orgSelect) {
+                            orgSelect.value = building.organization_id;
+                            await loadBuildingsForModal(building.organization_id);
+                        }
+                        
+                        // Set building
+                        const buildingSelect = document.getElementById('room-item-building');
+                        if (buildingSelect) {
+                            buildingSelect.value = building.id;
+                            await loadRoomsForModal(building.id);
+                        }
+                        
+                        // Set room
+                        const roomSelect = document.getElementById('room-item-room');
+                        if (roomSelect) {
+                            roomSelect.value = room.id;
+                        }
+                    }
+                }
+            }
+            
             // Store item ID for update
             const form = document.getElementById('add-room-item-form');
             if (form) {
@@ -310,15 +499,22 @@ async function saveItem() {
     const statusSelect = document.getElementById('room-item-status');
     const categorySelect = document.getElementById('room-item-category');
     const responsibleInput = document.getElementById('room-item-responsible');
+    const roomSelect = document.getElementById('room-item-room');
     
     const inventory_number = numberInput?.value?.trim() || '';
     const location = locationInput?.value?.trim() || '';
     const status = statusSelect?.value || '';
     const category = categorySelect?.value || '';
     const responsible_person = responsibleInput?.value?.trim() || '';
+    const room_id = roomSelect?.value || '';
     
     if (!inventory_number) {
         showError('Inventar nomresi mutleq doldurulmalidir');
+        return;
+    }
+    
+    if (!room_id) {
+        showError('Otaq mutleq secilmelidir');
         return;
     }
     
@@ -329,7 +525,7 @@ async function saveItem() {
             status,
             category,
             responsible_person,
-            room_id: currentRoomId
+            room_id
         };
         
         const form = document.getElementById('add-room-item-form');
@@ -358,6 +554,8 @@ async function saveItem() {
             closeAddItemModal();
             if (currentRoomId) {
                 loadItems(currentRoomId);
+                loadItemCount(currentRoomId);
+                loadItemStats(currentRoomId);
             }
             showSuccess(editingId ? 'Element ugurla yenilendi' : 'Element ugurla elave edildi');
         } else {
@@ -389,6 +587,8 @@ async function deleteItem(itemId) {
         if (data.success) {
             if (currentRoomId) {
                 loadItems(currentRoomId);
+                loadItemCount(currentRoomId);
+                loadItemStats(currentRoomId);
             }
             showSuccess('Element ugurla silindi');
         } else {
