@@ -8,6 +8,7 @@ let editingRoomId = null;
 
 // Initialize page
 document.addEventListener('DOMContentLoaded', function() {
+    // Load data
     loadOrganizations();
     loadRooms();
     
@@ -39,7 +40,7 @@ async function loadOrganizations() {
         });
         const data = await response.json();
         
-        if (data.success) {
+        if (data.success && data.data) {
             const orgSelect = document.getElementById('organization-room-filter');
             if (orgSelect) {
                 orgSelect.innerHTML = '<option value="">Butun teskilatlar</option>';
@@ -75,7 +76,7 @@ async function loadBuildings() {
         });
         const data = await response.json();
         
-        if (data.success) {
+        if (data.success && data.data) {
             buildingSelect.innerHTML = '<option value="">Butun binalar</option>';
             
             data.data.forEach(building => {
@@ -98,7 +99,7 @@ async function loadBuildingsForModal() {
         });
         const data = await response.json();
         
-        if (data.success) {
+        if (data.success && data.data) {
             const buildingSelect = document.getElementById('room-building');
             if (buildingSelect) {
                 buildingSelect.innerHTML = '<option value="">Secin</option>';
@@ -153,7 +154,10 @@ async function loadRooms() {
 function renderRooms(rooms) {
     const tbody = document.getElementById('rooms-table-body');
     
-    if (!tbody) return;
+    if (!tbody) {
+        console.error('Error: rooms-table-body element not found');
+        return;
+    }
     
     if (!rooms || rooms.length === 0) {
         tbody.innerHTML = '<tr><td colspan="6" class="text-center">Hech bir otaq tapilmadi</td></tr>';
@@ -172,13 +176,13 @@ function renderRooms(rooms) {
             <td>${escapeHtml(room.description || '-')}</td>
             <td>
                 <button class="btn btn-info btn-sm" onclick="viewRoomItems('${room.id}')" title="Inventari gosterm">
-                    👁️
+                    \ud83d\udc41\ufe0f
                 </button>
                 <button class="btn btn-warning btn-sm" onclick="openEditRoomModal('${room.id}')" title="Redakte et">
-                    ✏️
+                    \u270f\ufe0f
                 </button>
                 <button class="btn btn-danger btn-sm" onclick="confirmDeleteRoom('${room.id}', '${escapeHtml(room.name || '')}')" title="Sil">
-                    🗑️
+                    \ud83d\uddd1\ufe0f
                 </button>
             </td>
         `;
@@ -220,29 +224,32 @@ function resetFilters() {
 // Open add room modal
 function openAddRoomModal() {
     const modal = document.getElementById('add-room-modal');
-    if (modal) {
-        // Clear form
-        const nameInput = document.getElementById('room-name');
-        const descInput = document.getElementById('room-description');
-        const capacityInput = document.getElementById('room-capacity');
-        const buildingSelect = document.getElementById('room-building');
-        const modalTitle = modal.querySelector('.modal-header h3');
-        
-        if (nameInput) nameInput.value = '';
-        if (descInput) descInput.value = '';
-        if (capacityInput) capacityInput.value = '';
-        if (buildingSelect) buildingSelect.value = '';
-        if (modalTitle) modalTitle.textContent = 'Yeni Otaq';
-        
-        // Reset editing state
-        editingRoomId = null;
-        
-        // Load buildings
-        loadBuildingsForModal();
-        
-        // Show modal
-        modal.classList.add('active');
+    if (!modal) {
+        console.error('Error: add-room-modal element not found');
+        return;
     }
+    
+    // Clear form
+    const nameInput = document.getElementById('room-name');
+    const descInput = document.getElementById('room-description');
+    const capacityInput = document.getElementById('room-capacity');
+    const buildingSelect = document.getElementById('room-building');
+    const modalTitle = modal.querySelector('.modal-header h3');
+    
+    if (nameInput) nameInput.value = '';
+    if (descInput) descInput.value = '';
+    if (capacityInput) capacityInput.value = '';
+    if (buildingSelect) buildingSelect.value = '';
+    if (modalTitle) modalTitle.textContent = 'Yeni Otaq';
+    
+    // Reset editing state
+    editingRoomId = null;
+    
+    // Load buildings
+    loadBuildingsForModal();
+    
+    // Show modal
+    modal.classList.add('active');
 }
 
 // Open edit room modal
@@ -257,29 +264,32 @@ async function openEditRoomModal(roomId) {
             const room = data.data;
             const modal = document.getElementById('add-room-modal');
             
-            if (modal) {
-                // Set form values
-                const nameInput = document.getElementById('room-name');
-                const descInput = document.getElementById('room-description');
-                const capacityInput = document.getElementById('room-capacity');
-                const buildingSelect = document.getElementById('room-building');
-                const modalTitle = modal.querySelector('.modal-header h3');
-                
-                if (nameInput) nameInput.value = room.name || '';
-                if (descInput) descInput.value = room.description || '';
-                if (capacityInput) capacityInput.value = room.capacity || '';
-                if (buildingSelect) buildingSelect.value = room.building_id || '';
-                if (modalTitle) modalTitle.textContent = 'Otaqi Redakte Et';
-                
-                // Set editing state
-                editingRoomId = roomId;
-                
-                // Load buildings
-                loadBuildingsForModal();
-                
-                // Show modal
-                modal.classList.add('active');
+            if (!modal) {
+                console.error('Error: add-room-modal element not found');
+                return;
             }
+            
+            // Set form values
+            const nameInput = document.getElementById('room-name');
+            const descInput = document.getElementById('room-description');
+            const capacityInput = document.getElementById('room-capacity');
+            const buildingSelect = document.getElementById('room-building');
+            const modalTitle = modal.querySelector('.modal-header h3');
+            
+            if (nameInput) nameInput.value = room.name || '';
+            if (descInput) descInput.value = room.description || '';
+            if (capacityInput) capacityInput.value = room.capacity || '';
+            if (buildingSelect) buildingSelect.value = room.building_id || '';
+            if (modalTitle) modalTitle.textContent = 'Otaqi Redakte Et';
+            
+            // Set editing state
+            editingRoomId = roomId;
+            
+            // Load buildings
+            loadBuildingsForModal();
+            
+            // Show modal
+            modal.classList.add('active');
         }
     } catch (error) {
         console.error('Error loading room for edit:', error);
