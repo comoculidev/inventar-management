@@ -9,6 +9,14 @@ let currentFilters = {
 
 let organizations = [];
 
+// Helper function to make authenticated fetch calls
+async function authenticatedFetch(url, options = {}) {
+    return fetch(url, {
+        ...options,
+        credentials: 'include'
+    });
+}
+
 // Get room ID from URL path: /organization/building/room/:id
 document.addEventListener('DOMContentLoaded', function() {
     const pathParts = window.location.pathname.split('/');
@@ -38,7 +46,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // Load organizations
 async function loadOrganizations() {
     try {
-        const response = await fetch('/api/organizations');
+        const response = await authenticatedFetch('/api/organizations');
         const data = await response.json();
         
         if (data.success) {
@@ -47,7 +55,7 @@ async function loadOrganizations() {
             // Populate organization dropdown in modal
             const orgSelect = document.getElementById('room-item-organization');
             if (orgSelect) {
-                orgSelect.innerHTML = '<option value="">Seçin</option>';
+                orgSelect.innerHTML = '<option value="">Se\u0017in</option>';
                 data.data.forEach(org => {
                     const option = document.createElement('option');
                     option.value = org.id;
@@ -67,13 +75,13 @@ async function loadBuildingsForRoomItem(organizationId) {
         const url = organizationId 
             ? `/api/buildings/organization/${organizationId}`
             : '/api/buildings';
-        const response = await fetch(url);
+        const response = await authenticatedFetch(url);
         const data = await response.json();
         
         if (data.success) {
             const select = document.getElementById('room-item-building');
             if (select) {
-                select.innerHTML = '<option value="">Seçin</option>';
+                select.innerHTML = '<option value="">Se\u0017in</option>';
                 data.data.forEach(building => {
                     const option = document.createElement('option');
                     option.value = building.id;
@@ -85,7 +93,7 @@ async function loadBuildingsForRoomItem(organizationId) {
             // Reset room dropdown
             const roomSelect = document.getElementById('room-item-room');
             if (roomSelect) {
-                roomSelect.innerHTML = '<option value="">Seçin</option>';
+                roomSelect.innerHTML = '<option value="">Se\u0017in</option>';
             }
         }
     } catch (error) {
@@ -99,13 +107,13 @@ async function loadRoomsForRoomItem(buildingId) {
         const url = buildingId 
             ? `/api/rooms/building/${buildingId}`
             : '/api/rooms';
-        const response = await fetch(url);
+        const response = await authenticatedFetch(url);
         const data = await response.json();
         
         if (data.success) {
             const select = document.getElementById('room-item-room');
             if (select) {
-                select.innerHTML = '<option value="">Seçin</option>';
+                select.innerHTML = '<option value="">Se\u0017in</option>';
                 data.data.forEach(room => {
                     const option = document.createElement('option');
                     option.value = room.id;
@@ -129,10 +137,10 @@ function loadUserInfo() {
             const roleSpan = document.getElementById('user-role');
             
             if (userSpan) {
-                userSpan.textContent = userData.username || 'İstifadəçi';
+                userSpan.textContent = userData.username || '\u0130stifad\u0259\u0017i';
             }
             if (roleSpan) {
-                roleSpan.textContent = userData.role === 'admin' ? 'Admin' : 'İstifadəçi';
+                roleSpan.textContent = userData.role === 'admin' ? 'Admin' : '\u0130stifad\u0259\u0017i';
             }
         } catch (e) {
             console.error('Error parsing user data:', e);
@@ -143,9 +151,7 @@ function loadUserInfo() {
 // Load room details
 async function loadRoomDetails(roomId) {
     try {
-        const response = await fetch(`/api/rooms/${roomId}`, {
-            credentials: 'include'
-        });
+        const response = await authenticatedFetch(`/api/rooms/${roomId}`);
         const data = await response.json();
         
         if (data.success && data.data) {
@@ -167,7 +173,7 @@ async function loadRoomDetails(roomId) {
             // Pre-load organization and building for the modal
             if (data.data.building_id) {
                 // Get building to find organization
-                const buildingResponse = await fetch(`/api/buildings/${data.data.building_id}`);
+                const buildingResponse = await authenticatedFetch(`/api/buildings/${data.data.building_id}`);
                 const buildingData = await buildingResponse.json();
                 
                 if (buildingData.success && buildingData.data && buildingData.data.organization_id) {
@@ -204,9 +210,7 @@ async function loadRoomDetails(roomId) {
 // Load item count for room
 async function loadItemCount(roomId) {
     try {
-        const response = await fetch(`/api/rooms/${roomId}/items`, {
-            credentials: 'include'
-        });
+        const response = await authenticatedFetch(`/api/rooms/${roomId}/items`);
         const data = await response.json();
         
         if (data.success) {
@@ -224,9 +228,7 @@ async function loadItemCount(roomId) {
 // Load item stats for room
 async function loadItemStats(roomId) {
     try {
-        const response = await fetch(`/api/rooms/${roomId}/items`, {
-            credentials: 'include'
-        });
+        const response = await authenticatedFetch(`/api/rooms/${roomId}/items`);
         const data = await response.json();
         
         if (data.success && data.data) {
@@ -264,9 +266,7 @@ async function loadItems(roomId) {
             params.append('category', categoryFilter.value);
         }
         
-        const response = await fetch(`/api/rooms/${roomId}/items?${params.toString()}`, {
-            credentials: 'include'
-        });
+        const response = await authenticatedFetch(`/api/rooms/${roomId}/items?${params.toString()}`);
         const data = await response.json();
         
         if (data.success) {
@@ -288,7 +288,7 @@ function renderItems(items) {
     }
     
     if (!items || items.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="text-center">Heç bir element tapılmadı</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center">He\u0017 bir element tap\u0131lmad\u0131</td></tr>';
         return;
     }
     
@@ -399,9 +399,7 @@ function closeAddItemModal() {
 // Edit item
 async function editItem(itemId) {
     try {
-        const response = await fetch(`/api/inventory-items/${itemId}`, {
-            credentials: 'include'
-        });
+        const response = await authenticatedFetch(`/api/inventory-items/${itemId}`);
         const data = await response.json();
         
         if (data.success) {
@@ -431,7 +429,7 @@ async function editItem(itemId) {
             // Load organization and set value
             if (item.room_id) {
                 // Load the room details to get building and organization
-                const roomResponse = await fetch(`/api/rooms/${item.room_id}`);
+                const roomResponse = await authenticatedFetch(`/api/rooms/${item.room_id}`);
                 const roomData = await roomResponse.json();
                 
                 if (roomData.success && roomData.data) {
@@ -491,7 +489,7 @@ async function saveItem() {
     const room_id = roomSelect?.value || '';
     
     if (!inventory_number || !room_id) {
-        showError('İnventar nömrəsi və otaq mütləq doldurulmalıdır');
+        showError('\u0130nventar n\u00f6mr\u0259si v\u0259 otaq m\u00fctl\u0259q doldurulmal\u0131d\u0131r');
         return;
     }
     
@@ -513,13 +511,12 @@ async function saveItem() {
             method = 'PUT';
         }
         
-        const response = await fetch(url, {
+        const response = await authenticatedFetch(url, {
             method,
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(itemData),
-            credentials: 'include'
+            body: JSON.stringify(itemData)
         });
         
         const data = await response.json();
@@ -531,7 +528,7 @@ async function saveItem() {
                 loadItemCount(currentRoomId);
                 loadItemStats(currentRoomId);
             }
-            showSuccess(id ? 'Element uğurla yenilendi' : 'Element uğurla əlavə edildi');
+            showSuccess(id ? 'Element u\u011furla yenilendi' : 'Element u\u011furla \u0259lav\u0259 edildi');
         } else {
             showError(data.error || 'Xeta bas verdi');
         }
@@ -546,7 +543,7 @@ function confirmDeleteItem(itemId, itemNumber) {
     const modal = document.getElementById('delete-modal');
     if (!modal) return;
     
-    document.getElementById('delete-item-info').textContent = `İnventar nömrəsi: ${itemNumber}`;
+    document.getElementById('delete-item-info').textContent = `\u0130nventar n\u00f6mr\u0259si: ${itemNumber}`;
     modal.dataset.itemId = itemId;
     modal.classList.add('active');
 }
@@ -567,9 +564,8 @@ async function confirmDelete() {
     const id = modal.dataset.itemId;
     
     try {
-        const response = await fetch(`/api/inventory-items/${id}`, {
-            method: 'DELETE',
-            credentials: 'include'
+        const response = await authenticatedFetch(`/api/inventory-items/${id}`, {
+            method: 'DELETE'
         });
         
         const data = await response.json();
@@ -581,7 +577,7 @@ async function confirmDelete() {
                 loadItemCount(currentRoomId);
                 loadItemStats(currentRoomId);
             }
-            showSuccess('Element uğurla silindi');
+            showSuccess('Element u\u011furla silindi');
         } else {
             showError(data.error || 'Xeta bas verdi');
         }

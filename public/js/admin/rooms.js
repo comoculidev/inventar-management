@@ -6,6 +6,14 @@ let currentFilters = {
 };
 let editingRoomId = null;
 
+// Helper function to make authenticated fetch calls
+async function authenticatedFetch(url, options = {}) {
+    return fetch(url, {
+        ...options,
+        credentials: 'include'
+    });
+}
+
 // Initialize page
 document.addEventListener('DOMContentLoaded', function() {
     // Load data
@@ -35,9 +43,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // Load organizations for filter dropdown
 async function loadOrganizations() {
     try {
-        const response = await fetch('/api/organizations', {
-            credentials: 'include'
-        });
+        const response = await authenticatedFetch('/api/organizations');
         const data = await response.json();
         
         if (data.success && data.data) {
@@ -45,7 +51,7 @@ async function loadOrganizations() {
             const orgModalSelect = document.getElementById('room-organization');
             
             if (orgSelect) {
-                orgSelect.innerHTML = '<option value="">Bütün təşkilatlar</option>';
+                orgSelect.innerHTML = '<option value="">Butun teskilatlar</option>';
                 
                 data.data.forEach(org => {
                     const option = document.createElement('option');
@@ -56,7 +62,7 @@ async function loadOrganizations() {
             }
             
             if (orgModalSelect) {
-                orgModalSelect.innerHTML = '<option value="">Seçin</option>';
+                orgModalSelect.innerHTML = '<option value="">Se\u0017in</option>';
                 
                 data.data.forEach(org => {
                     const option = document.createElement('option');
@@ -83,13 +89,11 @@ async function loadBuildingsForRooms(organizationId) {
             url = `/api/buildings/organization/${organizationId}`;
         }
         
-        const response = await fetch(url, {
-            credentials: 'include'
-        });
+        const response = await authenticatedFetch(url);
         const data = await response.json();
         
         if (data.success && data.data) {
-            buildingSelect.innerHTML = '<option value="">Bütün binalar</option>';
+            buildingSelect.innerHTML = '<option value="">Butun binalar</option>';
             
             data.data.forEach(building => {
                 const option = document.createElement('option');
@@ -111,15 +115,13 @@ async function loadBuildingsForRoomModal(organizationId) {
             url = `/api/buildings/organization/${organizationId}`;
         }
         
-        const response = await fetch(url, {
-            credentials: 'include'
-        });
+        const response = await authenticatedFetch(url);
         const data = await response.json();
         
         if (data.success && data.data) {
             const buildingSelect = document.getElementById('room-building');
             if (buildingSelect) {
-                buildingSelect.innerHTML = '<option value="">Seçin</option>';
+                buildingSelect.innerHTML = '<option value="">Se\u0017in</option>';
                 
                 data.data.forEach(building => {
                     const option = document.createElement('option');
@@ -153,9 +155,7 @@ async function loadRooms() {
             params.append('buildingId', buildingFilter.value);
         }
         
-        const response = await fetch(`/api/rooms?${params.toString()}`, {
-            credentials: 'include'
-        });
+        const response = await authenticatedFetch(`/api/rooms?${params.toString()}`);
         const data = await response.json();
         
         if (data.success) {
@@ -163,7 +163,7 @@ async function loadRooms() {
         }
     } catch (error) {
         console.error('Error loading rooms:', error);
-        showError('Otaqlar yüklənərkən xəta baş verdi');
+        showError('Otaqlar y\u00fckl\u0259n\u0259rk\u0259n x\u0259ta ba\u015f verdi');
     }
 }
 
@@ -177,7 +177,7 @@ function renderRooms(rooms) {
     }
     
     if (!rooms || rooms.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" class="text-center">Heç bir otaq tapılmadı</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center">He\u0017 bir otaq tap\u0131lmad\u0131</td></tr>';
         return;
     }
     
@@ -192,14 +192,14 @@ function renderRooms(rooms) {
             <td>${escapeHtml(room.building_name || room.building_id || '-')}</td>
             <td>${escapeHtml(room.organization_name || '-')}</td>
             <td>
-                <a href="/organization/building/room/${room.id}" class="btn btn-info btn-sm" title="Elementləri göstər">
+                <a href="/organization/building/room/${room.id}" class="btn btn-info btn-sm" title="Elementl\u0259ri g\u00f6st\u0259r">
                     ${itemCount} element
                 </a>
             </td>
             <td>${room.capacity || '-'}</td>
             <td>${escapeHtml(room.description || '-')}</td>
             <td>
-                <button class="btn btn-warning btn-sm" onclick="openEditRoomModal('${room.id}')" title="Redaktə et">
+                <button class="btn btn-warning btn-sm" onclick="openEditRoomModal('${room.id}')" title="Redakt\u0259 et">
                     \u270f\ufe0f
                 </button>
                 <button class="btn btn-danger btn-sm" onclick="confirmDeleteRoom('${room.id}', '${escapeHtml(room.name || '')}')" title="Sil">
@@ -263,7 +263,7 @@ function openAddRoomModal() {
     if (nameInput) nameInput.value = '';
     if (descInput) descInput.value = '';
     if (capacityInput) capacityInput.value = '';
-    if (buildingSelect) buildingSelect.value = '';
+    if (buildingSelect) buildingSelect.innerHTML = '<option value="">Se\u0017in</option>';
     if (orgSelect) orgSelect.value = '';
     if (modalTitle) modalTitle.textContent = 'Yeni Otaq';
     
@@ -283,9 +283,7 @@ function openAddRoomModal() {
 // Open edit room modal
 async function openEditRoomModal(roomId) {
     try {
-        const response = await fetch(`/api/rooms/${roomId}`, {
-            credentials: 'include'
-        });
+        const response = await authenticatedFetch(`/api/rooms/${roomId}`);
         const data = await response.json();
         
         if (data.success) {
@@ -312,7 +310,7 @@ async function openEditRoomModal(roomId) {
             if (capacityInput) capacityInput.value = room.capacity || '';
             if (buildingSelect) buildingSelect.value = room.building_id || '';
             if (orgSelect) orgSelect.value = room.organization_id || '';
-            if (modalTitle) modalTitle.textContent = 'Otağı Redaktə Et';
+            if (modalTitle) modalTitle.textContent = 'Otaqi Redakte Et';
             
             // Set editing state
             editingRoomId = roomId;
@@ -332,7 +330,7 @@ async function openEditRoomModal(roomId) {
         }
     } catch (error) {
         console.error('Error loading room for edit:', error);
-        showError('Otaq yüklənərkən xəta baş verdi');
+        showError('Otaq y\u00fckl\u0259n\u0259rk\u0259n x\u0259ta ba\u015f verdi');
     }
 }
 
@@ -368,7 +366,7 @@ async function saveRoom() {
     const buildingId = buildingSelect?.value;
     
     if (!name || !buildingId) {
-        showError('Otaq adı və bina mütləq doldurulmalıdır');
+        showError('Otaq adi v\u0259 bina m\u00fctl\u0259q doldurulmal\u0131d\u0131r');
         return;
     }
     
@@ -388,13 +386,12 @@ async function saveRoom() {
             method = 'PUT';
         }
         
-        const response = await fetch(url, {
+        const response = await authenticatedFetch(url, {
             method,
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(roomData),
-            credentials: 'include'
+            body: JSON.stringify(roomData)
         });
         
         const data = await response.json();
@@ -402,13 +399,13 @@ async function saveRoom() {
         if (data.success) {
             closeAddRoomModal();
             loadRooms();
-            showSuccess(id ? 'Otaq uğurla yeniləndi' : 'Otaq uğurla əlavə edildi');
+            showSuccess(id ? 'Otaq u\u011furla yenil\u0259ndi' : 'Otaq u\u011furla \u0259lav\u0259 edildi');
         } else {
-            showError(data.error || 'Xəta baş verdi');
+            showError(data.error || 'X\u0259ta ba\u015f verdi');
         }
     } catch (error) {
         console.error('Error saving room:', error);
-        showError('Otaq yadda saxlanarkən xəta baş verdi');
+        showError('Otaq yadda saxlanark\u0259n x\u0259ta ba\u015f verdi');
     }
 }
 
@@ -416,13 +413,13 @@ async function saveRoom() {
 function confirmDeleteRoom(roomId, roomName) {
     const modal = document.getElementById('delete-room-modal');
     if (!modal) {
-        if (confirm(`"${roomName}" otağını silmək istədiyinizə əminsiniz?`)) {
+        if (confirm(`"${roomName}" otaqini silmek istediyinize eminsiniz?`)) {
             deleteRoom(roomId);
         }
         return;
     }
     
-    document.getElementById('delete-room-info').textContent = `"${roomName}" otağını silmək istədiyinizə əminsiniz?`;
+    document.getElementById('delete-room-info').textContent = `"${roomName}" otaqini silmek istediyinize eminsiniz?`;
     modal.dataset.roomId = roomId;
     modal.classList.add('active');
 }
@@ -433,12 +430,10 @@ async function confirmDelete() {
     if (!modal) return;
     
     const roomId = modal.dataset.roomId;
-    const roomName = modal.dataset.roomName;
     
     try {
-        const response = await fetch(`/api/rooms/${roomId}`, {
-            method: 'DELETE',
-            credentials: 'include'
+        const response = await authenticatedFetch(`/api/rooms/${roomId}`, {
+            method: 'DELETE'
         });
         
         const data = await response.json();
@@ -446,35 +441,34 @@ async function confirmDelete() {
         if (data.success) {
             closeDeleteRoomModal();
             loadRooms();
-            showSuccess('Otaq uğurla silindi');
+            showSuccess('Otaq u\u011furla silindi');
         } else {
-            showError(data.error || 'Xəta baş verdi');
+            showError(data.error || 'X\u0259ta ba\u015f verdi');
         }
     } catch (error) {
         console.error('Error deleting room:', error);
-        showError('Otaq silinərkən xəta baş verdi');
+        showError('Otaq silin\u0259rk\u0259n x\u0259ta ba\u015f verdi');
     }
 }
 
 // Delete room (called from confirmDeleteRoom if no modal)
 async function deleteRoom(roomId) {
     try {
-        const response = await fetch(`/api/rooms/${roomId}`, {
-            method: 'DELETE',
-            credentials: 'include'
+        const response = await authenticatedFetch(`/api/rooms/${roomId}`, {
+            method: 'DELETE'
         });
         
         const data = await response.json();
         
         if (data.success) {
             loadRooms();
-            showSuccess('Otaq uğurla silindi');
+            showSuccess('Otaq u\u011furla silindi');
         } else {
-            showError(data.error || 'Xəta baş verdi');
+            showError(data.error || 'X\u0259ta ba\u015f verdi');
         }
     } catch (error) {
         console.error('Error deleting room:', error);
-        showError('Otaq silinərkən xəta baş verdi');
+        showError('Otaq silin\u0259rk\u0259n x\u0259ta ba\u015f verdi');
     }
 }
 
@@ -491,7 +485,7 @@ function showSuccess(message) {
 }
 
 function showError(message) {
-    alert(`Xəta: ${message}`);
+    alert(`X\u0259ta: ${message}`);
 }
 
 // Close modals on outside click

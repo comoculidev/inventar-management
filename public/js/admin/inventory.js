@@ -13,6 +13,14 @@ let organizations = [];
 let buildings = [];
 let rooms = [];
 
+// Helper function to make authenticated fetch calls
+async function authenticatedFetch(url, options = {}) {
+    return fetch(url, {
+        ...options,
+        credentials: 'include'
+    });
+}
+
 // Initialize page
 document.addEventListener('DOMContentLoaded', function() {
     loadOrganizations();
@@ -55,7 +63,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // Load organizations for filter
 async function loadOrganizations() {
     try {
-        const response = await fetch('/api/organizations');
+        const response = await authenticatedFetch('/api/organizations');
         const data = await response.json();
         
         if (data.success) {
@@ -64,7 +72,7 @@ async function loadOrganizations() {
             // Populate filter dropdown
             const filterSelect = document.getElementById('organization-filter');
             if (filterSelect) {
-                filterSelect.innerHTML = '<option value="">Bütün təşkilatlar</option>';
+                filterSelect.innerHTML = '<option value="">Btn tkilatlar</option>';
                 data.data.forEach(org => {
                     const option = document.createElement('option');
                     option.value = org.id;
@@ -76,7 +84,7 @@ async function loadOrganizations() {
             // Populate item organization dropdown
             const itemOrgSelect = document.getElementById('item-organization');
             if (itemOrgSelect) {
-                itemOrgSelect.innerHTML = '<option value="">Seçin</option>';
+                itemOrgSelect.innerHTML = '<option value="">Sein</option>';
                 data.data.forEach(org => {
                     const option = document.createElement('option');
                     option.value = org.id;
@@ -96,14 +104,14 @@ async function loadBuildings(organizationId) {
         const url = organizationId 
             ? `/api/buildings/organization/${organizationId}`
             : '/api/buildings';
-        const response = await fetch(url);
+        const response = await authenticatedFetch(url);
         const data = await response.json();
         
         if (data.success) {
             buildings = data.data;
             const select = document.getElementById('building-filter');
             if (select) {
-                select.innerHTML = '<option value="">Bütün binalar</option>';
+                select.innerHTML = '<option value="">Btn binalar</option>';
                 data.data.forEach(building => {
                     const option = document.createElement('option');
                     option.value = building.id;
@@ -114,7 +122,7 @@ async function loadBuildings(organizationId) {
             
             // Reset building and room filters
             const buildingFilter = document.getElementById('building-filter');
-            const roomFilter = document.getElementById('room-filter');
+            const roomFilter = document.getElementById('room-id');
             if (buildingFilter) buildingFilter.value = '';
             if (roomFilter) roomFilter.value = '';
             
@@ -131,13 +139,13 @@ async function loadBuildingsForItem(organizationId) {
         const url = organizationId 
             ? `/api/buildings/organization/${organizationId}`
             : '/api/buildings';
-        const response = await fetch(url);
+        const response = await authenticatedFetch(url);
         const data = await response.json();
         
         if (data.success) {
             const select = document.getElementById('item-building');
             if (select) {
-                select.innerHTML = '<option value="">Seçin</option>';
+                select.innerHTML = '<option value="">Sein</option>';
                 data.data.forEach(building => {
                     const option = document.createElement('option');
                     option.value = building.id;
@@ -149,7 +157,7 @@ async function loadBuildingsForItem(organizationId) {
             // Reset room dropdown
             const roomSelect = document.getElementById('item-room');
             if (roomSelect) {
-                roomSelect.innerHTML = '<option value="">Seçin</option>';
+                roomSelect.innerHTML = '<option value="">Sein</option>';
             }
         }
     } catch (error) {
@@ -157,45 +165,19 @@ async function loadBuildingsForItem(organizationId) {
     }
 }
 
-// Load rooms for item modal (cascading from building)
-async function loadRoomsForItem(buildingId) {
-    try {
-        const url = buildingId 
-            ? `/api/rooms/building/${buildingId}`
-            : '/api/rooms';
-        const response = await fetch(url);
-        const data = await response.json();
-        
-        if (data.success) {
-            const select = document.getElementById('item-room');
-            if (select) {
-                select.innerHTML = '<option value="">Seçin</option>';
-                data.data.forEach(room => {
-                    const option = document.createElement('option');
-                    option.value = room.id;
-                    option.textContent = room.name;
-                    select.appendChild(option);
-                });
-            }
-        }
-    } catch (error) {
-        console.error('Error loading rooms for item:', error);
-    }
-}
-
-// Load rooms by building
+// Load rooms for filter
 async function loadRoomsByBuilding(buildingId) {
     try {
         const url = buildingId 
             ? `/api/rooms/building/${buildingId}`
             : '/api/rooms';
-        const response = await fetch(url);
+        const response = await authenticatedFetch(url);
         const data = await response.json();
         
         if (data.success) {
             const select = document.getElementById('room-id');
             if (select) {
-                select.innerHTML = '<option value="">Seçin</option>';
+                select.innerHTML = '<option value="">Sein</option>';
                 data.data.forEach(room => {
                     const option = document.createElement('option');
                     option.value = room.id;
@@ -209,6 +191,56 @@ async function loadRoomsByBuilding(buildingId) {
     }
 }
 
+// Load rooms for item modal (cascading from building)
+async function loadRoomsForItem(buildingId) {
+    try {
+        const url = buildingId 
+            ? `/api/rooms/building/${buildingId}`
+            : '/api/rooms';
+        const response = await authenticatedFetch(url);
+        const data = await response.json();
+        
+        if (data.success) {
+            const select = document.getElementById('item-room');
+            if (select) {
+                select.innerHTML = '<option value="">Sein</option>';
+                data.data.forEach(room => {
+                    const option = document.createElement('option');
+                    option.value = room.id;
+                    option.textContent = room.name;
+                    select.appendChild(option);
+                });
+            }
+        }
+    } catch (error) {
+        console.error('Error loading rooms for item:', error);
+    }
+}
+
+// Load rooms
+async function loadRooms() {
+    try {
+        const response = await authenticatedFetch('/api/rooms');
+        const data = await response.json();
+        
+        if (data.success) {
+            rooms = data.data;
+            const select = document.getElementById('room-id');
+            if (select) {
+                select.innerHTML = '<option value="">Sein</option>';
+                data.data.forEach(room => {
+                    const option = document.createElement('option');
+                    option.value = room.id;
+                    option.textContent = room.name;
+                    select.appendChild(option);
+                });
+            }
+        }
+    } catch (error) {
+        console.error('Error loading rooms:', error);
+    }
+}
+
 // Load inventory items
 async function loadInventoryItems() {
     try {
@@ -216,7 +248,7 @@ async function loadInventoryItems() {
         params.append('page', currentPage);
         params.append('limit', 20);
         
-        const response = await fetch(`/api/inventory-items/filter?${params}`);
+        const response = await authenticatedFetch(`/api/inventory-items/filter?${params}`);
         const data = await response.json();
         
         if (data.success) {
@@ -228,7 +260,7 @@ async function loadInventoryItems() {
         }
     } catch (error) {
         console.error('Error loading inventory items:', error);
-        showAlert('İnventar əşyaları yüklənərkən xəta baş verdi', 'error');
+        showAlert('\u0130nventar \u0259\u015fyalar\u0131 y\u00fckl\u0259n\u0259rk\u0259n x\u0259ta ba\u015f verdi', 'error');
     }
 }
 
@@ -241,7 +273,7 @@ function renderInventoryTable(items) {
     
     if (items.length === 0) {
         const row = document.createElement('tr');
-        row.innerHTML = '<td colspan="7" class="text-center">Heç bir əşya tapılmadı</td>';
+        row.innerHTML = '<td colspan="7" class="text-center">He\u0017 bir \u0259\u015fya tap\u0131lmad\u0131</td>';
         tbody.appendChild(row);
         return;
     }
@@ -256,7 +288,7 @@ function renderInventoryTable(items) {
             <td>${escapeHtml(item.responsible_person || '-')}</td>
             <td>${escapeHtml(item.room_name || item.room_id || '-')}</td>
             <td class="actions">
-                <button class="btn btn-info btn-icon" onclick="openEditItemModal('${item.id}')" title="Redaktə et">
+                <button class="btn btn-info btn-icon" onclick="openEditItemModal('${item.id}')" title="Redakt\u0259 et">
                     \u270f\ufe0f
                 </button>
                 <button class="btn btn-danger btn-icon" onclick="confirmDeleteItem('${item.id}', '${escapeHtml(item.inventory_number || '')}')" title="Sil">
@@ -334,7 +366,7 @@ function openAddItemModal() {
     const modal = document.getElementById('add-item-modal');
     if (!modal) return;
     
-    document.getElementById('modal-title').textContent = 'Yeni İnventar Elementi';
+    document.getElementById('modal-title').textContent = 'Yeni \u0130nventar Elementi';
     document.getElementById('item-id').value = '';
     document.getElementById('inventory-number').value = '';
     document.getElementById('item-location').value = '';
@@ -348,13 +380,19 @@ function openAddItemModal() {
         loadOrganizations();
     }
     
+    // Reset building and room dropdowns
+    const buildingSelect = document.getElementById('item-building');
+    const roomSelect = document.getElementById('item-room');
+    if (buildingSelect) buildingSelect.innerHTML = '<option value="">Se\u0017in</option>';
+    if (roomSelect) roomSelect.innerHTML = '<option value="">Se\u0017in</option>';
+    
     modal.classList.add('active');
 }
 
 // Open edit item modal
 async function openEditItemModal(id) {
     try {
-        const response = await fetch(`/api/inventory-items/${id}`);
+        const response = await authenticatedFetch(`/api/inventory-items/${id}`);
         const data = await response.json();
         
         if (data.success) {
@@ -362,7 +400,7 @@ async function openEditItemModal(id) {
             const modal = document.getElementById('add-item-modal');
             if (!modal) return;
             
-            document.getElementById('modal-title').textContent = 'İnventar Elementini Redaktə Et';
+            document.getElementById('modal-title').textContent = '\u0130nventar Elementini Redakt\u0259 Et';
             document.getElementById('item-id').value = item.id;
             document.getElementById('inventory-number').value = item.inventory_number || '';
             document.getElementById('item-location').value = item.location || '';
@@ -379,7 +417,7 @@ async function openEditItemModal(id) {
             // If we have room_id, we need to find the organization and building
             if (item.room_id) {
                 // Load the room details to get building and organization
-                const roomResponse = await fetch(`/api/rooms/${item.room_id}`);
+                const roomResponse = await authenticatedFetch(`/api/rooms/${item.room_id}`);
                 const roomData = await roomResponse.json();
                 
                 if (roomData.success && roomData.data) {
@@ -415,7 +453,7 @@ async function openEditItemModal(id) {
         }
     } catch (error) {
         console.error('Error loading item:', error);
-        showAlert('Element yüklənərkən xəta baş verdi', 'error');
+        showAlert('Element y\u00fckl\u0259n\u0259rk\u0259n x\u0259ta ba\u015f verdi', 'error');
     }
 }
 
@@ -438,7 +476,7 @@ async function saveItem() {
     const category = document.getElementById('item-category')?.value || '';
     
     if (!inventoryNumber || !roomId) {
-        showAlert('İnventar nömrəsi və otaq mütləq doldurulmalıdır', 'error');
+        showAlert('\u0130nventar n\u00f6mr\u0259si v\u0259 otaq m\u00fctl\u0259q doldurulmal\u0131d\u0131r', 'error');
         return;
     }
     
@@ -454,7 +492,7 @@ async function saveItem() {
         
         let response;
         if (id) {
-            response = await fetch(`/api/inventory-items/${id}`, {
+            response = await authenticatedFetch(`/api/inventory-items/${id}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json'
@@ -462,7 +500,7 @@ async function saveItem() {
                 body: JSON.stringify(data)
             });
         } else {
-            response = await fetch('/api/inventory-items', {
+            response = await authenticatedFetch('/api/inventory-items', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -476,13 +514,13 @@ async function saveItem() {
         if (result.success) {
             closeAddItemModal();
             loadInventoryItems();
-            showAlert(id ? 'Element uğurla redaktə edildi' : 'Element uğurla əlavə edildi', 'success');
+            showAlert(id ? '\u018f\u015fya u\u011furla redakt\u0259 edildi' : '\u018f\u015fya u\u011furla \u0259lav\u0259 edildi', 'success');
         } else {
-            showAlert(result.error || 'Xəta baş verdi', 'error');
+            showAlert(result.error || 'X\u0259ta ba\u015f verdi', 'error');
         }
     } catch (error) {
         console.error('Error saving item:', error);
-        showAlert('Elementi yadda saxlayarkən xəta baş verdi', 'error');
+        showAlert('Elementi yadda saxlayark\u0259n x\u0259ta ba\u015f verdi', 'error');
     }
 }
 
@@ -491,7 +529,7 @@ function confirmDeleteItem(id, inventoryNumber) {
     const modal = document.getElementById('delete-modal');
     if (!modal) return;
     
-    document.getElementById('delete-item-info').textContent = `İnventar nömrəsi: ${inventoryNumber}`;
+    document.getElementById('delete-item-info').textContent = `\u0130nventar n\u00f6mr\u0259si: ${inventoryNumber}`;
     modal.dataset.itemId = id;
     modal.classList.add('active');
 }
@@ -512,7 +550,7 @@ async function confirmDelete() {
     const id = modal.dataset.itemId;
     
     try {
-        const response = await fetch(`/api/inventory-items/${id}`, {
+        const response = await authenticatedFetch(`/api/inventory-items/${id}`, {
             method: 'DELETE'
         });
         
@@ -521,13 +559,13 @@ async function confirmDelete() {
         if (result.success) {
             closeDeleteModal();
             loadInventoryItems();
-            showAlert('Element uğurla silindi', 'success');
+            showAlert('\u018f\u015fya u\u011furla silindi', 'success');
         } else {
-            showAlert(result.error || 'Xəta baş verdi', 'error');
+            showAlert(result.error || 'X\u0259ta ba\u015f verdi', 'error');
         }
     } catch (error) {
         console.error('Error deleting item:', error);
-        showAlert('Elementi silinərkən xəta baş verdi', 'error');
+        showAlert('\u018f\u015fya silin\u0259rk\u0259n x\u0259ta ba\u015f verdi', 'error');
     }
 }
 
@@ -576,7 +614,7 @@ async function importExcel() {
     const file = fileInput?.files[0];
     
     if (!file) {
-        showAlert('Zəhmət olmasa, fayl seçin', 'error');
+        showAlert('Z\u0259hm\u0259t olmasa, fayl se\u0017in', 'error');
         return;
     }
     
@@ -584,7 +622,7 @@ async function importExcel() {
     formData.append('file', file);
     
     try {
-        const response = await fetch('/api/inventory-items/import', {
+        const response = await authenticatedFetch('/api/inventory-items/import', {
             method: 'POST',
             body: formData
         });
@@ -594,25 +632,25 @@ async function importExcel() {
         if (result.success) {
             closeImportModal();
             loadInventoryItems();
-            showAlert(`${result.message || 'Fayl uğurla idxal edildi'}`, 'success');
+            showAlert(`${result.message || 'Fayl u\u011furla idxal edildi'}`, 'success');
             
             // Show invalid items if any
             if (result.invalidItems && result.invalidItems.length > 0) {
-                showAlert(`${result.invalidItems.length} ədəd sətir xətalıdır və idxal edilməmişdir`, 'warning');
+                showAlert(`${result.invalidItems.length} \u0259d\u0259d s\u0259tir x\u0259tal\u0131d\u0131r v\u0259 idxal edilm\u0259mi\u015fdir`, 'warning');
             }
         } else {
-            showAlert(result.error || 'Xəta baş verdi', 'error');
+            showAlert(result.error || 'X\u0259ta ba\u015f verdi', 'error');
         }
     } catch (error) {
         console.error('Error importing Excel:', error);
-        showAlert('Fayl idxal olunarkən xəta baş verdi', 'error');
+        showAlert('Fayl idxal olunark\u0259n x\u0259ta ba\u015f verdi', 'error');
     }
 }
 
 // Fetch current user
 async function fetchCurrentUser() {
     try {
-        const response = await fetch('/api/auth/me');
+        const response = await authenticatedFetch('/api/auth/me');
         const data = await response.json();
         
         if (data.success && data.data) {
@@ -623,7 +661,7 @@ async function fetchCurrentUser() {
                 userSpan.textContent = data.data.username;
             }
             if (roleSpan) {
-                roleSpan.textContent = data.data.role === 'admin' ? 'Admin' : 'İstifadəçi';
+                roleSpan.textContent = data.data.role === 'admin' ? 'Admin' : '\u0130stifad\u0259\u0017i';
                 roleSpan.className = `badge badge-${data.data.role === 'admin' ? 'info' : 'success'}`;
             }
         }
