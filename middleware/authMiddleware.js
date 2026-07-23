@@ -8,6 +8,10 @@ const verifyAuth = async (req, res, next) => {
         const token = req.cookies.token;
         
         if (!token) {
+            // If the request accepts HTML, redirect to login
+            if (req.accepts('html')) {
+                return res.redirect('/login');
+            }
             return res.status(401).json({
                 success: false,
                 error: 'Authentication required'
@@ -21,6 +25,10 @@ const verifyAuth = async (req, res, next) => {
         const user = await User.getById(decoded.userId);
         
         if (!user) {
+            // If the request accepts HTML, redirect to login
+            if (req.accepts('html')) {
+                return res.redirect('/login');
+            }
             return res.status(401).json({
                 success: false,
                 error: 'User not found'
@@ -33,6 +41,10 @@ const verifyAuth = async (req, res, next) => {
         next();
     } catch (error) {
         console.error('Authentication error:', error);
+        // If the request accepts HTML, redirect to login
+        if (req.accepts('html')) {
+            return res.redirect('/login');
+        }
         return res.status(401).json({
             success: false,
             error: 'Invalid token'
@@ -44,6 +56,10 @@ const verifyAuth = async (req, res, next) => {
 const verifyRole = (roles = []) => {
     return (req, res, next) => {
         if (!req.user) {
+            // If the request accepts HTML, redirect to login
+            if (req.accepts('html')) {
+                return res.redirect('/login');
+            }
             return res.status(401).json({
                 success: false,
                 error: 'Authentication required'
@@ -51,6 +67,14 @@ const verifyRole = (roles = []) => {
         }
         
         if (roles.length && !roles.includes(req.user.role)) {
+            // If the request accepts HTML, redirect to appropriate dashboard
+            if (req.accepts('html')) {
+                if (req.user.role === 'admin') {
+                    return res.redirect('/admin/dashboard');
+                } else {
+                    return res.redirect('/user-panel');
+                }
+            }
             return res.status(403).json({
                 success: false,
                 error: 'Insufficient permissions'
@@ -64,6 +88,10 @@ const verifyRole = (roles = []) => {
 // Check if user is admin
 const isAdmin = (req, res, next) => {
     if (!req.user) {
+        // If the request accepts HTML, redirect to login
+        if (req.accepts('html')) {
+            return res.redirect('/login');
+        }
         return res.status(401).json({
             success: false,
             error: 'Authentication required'
@@ -71,6 +99,10 @@ const isAdmin = (req, res, next) => {
     }
     
     if (req.user.role !== 'admin') {
+        // If the request accepts HTML, redirect to user panel
+        if (req.accepts('html')) {
+            return res.redirect('/user-panel');
+        }
         return res.status(403).json({
             success: false,
             error: 'Admin access required'
@@ -83,6 +115,10 @@ const isAdmin = (req, res, next) => {
 // Check if user is regular user (not admin)
 const isUser = (req, res, next) => {
     if (!req.user) {
+        // If the request accepts HTML, redirect to login
+        if (req.accepts('html')) {
+            return res.redirect('/login');
+        }
         return res.status(401).json({
             success: false,
             error: 'Authentication required'
@@ -90,6 +126,10 @@ const isUser = (req, res, next) => {
     }
     
     if (req.user.role !== 'user') {
+        // If the request accepts HTML, redirect to admin dashboard
+        if (req.accepts('html')) {
+            return res.redirect('/admin/dashboard');
+        }
         return res.status(403).json({
             success: false,
             error: 'User access required'

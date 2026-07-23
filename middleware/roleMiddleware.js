@@ -2,6 +2,10 @@
 
 const verifyAdmin = (req, res, next) => {
     if (!req.user) {
+        // If the request accepts HTML, redirect to login
+        if (req.accepts('html')) {
+            return res.redirect('/login');
+        }
         return res.status(401).json({
             success: false,
             error: 'Authentication required'
@@ -9,6 +13,10 @@ const verifyAdmin = (req, res, next) => {
     }
     
     if (req.user.role !== 'admin') {
+        // If the request accepts HTML, redirect to user panel
+        if (req.accepts('html')) {
+            return res.redirect('/user-panel');
+        }
         return res.status(403).json({
             success: false,
             error: 'Admin access required'
@@ -20,6 +28,10 @@ const verifyAdmin = (req, res, next) => {
 
 const verifyUser = (req, res, next) => {
     if (!req.user) {
+        // If the request accepts HTML, redirect to login
+        if (req.accepts('html')) {
+            return res.redirect('/login');
+        }
         return res.status(401).json({
             success: false,
             error: 'Authentication required'
@@ -27,6 +39,10 @@ const verifyUser = (req, res, next) => {
     }
     
     if (req.user.role !== 'user') {
+        // If the request accepts HTML, redirect to admin dashboard
+        if (req.accepts('html')) {
+            return res.redirect('/admin/dashboard');
+        }
         return res.status(403).json({
             success: false,
             error: 'User access required'
@@ -38,6 +54,10 @@ const verifyUser = (req, res, next) => {
 
 const verifyAdminOrUser = (req, res, next) => {
     if (!req.user) {
+        // If the request accepts HTML, redirect to login
+        if (req.accepts('html')) {
+            return res.redirect('/login');
+        }
         return res.status(401).json({
             success: false,
             error: 'Authentication required'
@@ -45,6 +65,10 @@ const verifyAdminOrUser = (req, res, next) => {
     }
     
     if (req.user.role !== 'admin' && req.user.role !== 'user') {
+        // If the request accepts HTML, redirect to login
+        if (req.accepts('html')) {
+            return res.redirect('/login');
+        }
         return res.status(403).json({
             success: false,
             error: 'Access denied'
@@ -59,6 +83,10 @@ const protectAdminRoutes = (req, res, next) => {
     // Check if the route starts with /admin
     if (req.path.startsWith('/admin') || req.path.startsWith('/api/admin')) {
         if (!req.user) {
+            // If the request accepts HTML, redirect to login
+            if (req.accepts('html')) {
+                return res.redirect('/login');
+            }
             return res.status(401).json({
                 success: false,
                 error: 'Authentication required for admin routes'
@@ -66,6 +94,10 @@ const protectAdminRoutes = (req, res, next) => {
         }
         
         if (req.user.role !== 'admin') {
+            // If the request accepts HTML, redirect to user panel
+            if (req.accepts('html')) {
+                return res.redirect('/user-panel');
+            }
             return res.status(403).json({
                 success: false,
                 error: 'Admin access required'
@@ -81,6 +113,10 @@ const protectUserRoutes = (req, res, next) => {
     // Check if the route starts with /user
     if (req.path.startsWith('/user') || req.path.startsWith('/api/user')) {
         if (!req.user) {
+            // If the request accepts HTML, redirect to login
+            if (req.accepts('html')) {
+                return res.redirect('/login');
+            }
             return res.status(401).json({
                 success: false,
                 error: 'Authentication required for user routes'
@@ -88,6 +124,10 @@ const protectUserRoutes = (req, res, next) => {
         }
         
         if (req.user.role !== 'user') {
+            // If the request accepts HTML, redirect to admin dashboard
+            if (req.accepts('html')) {
+                return res.redirect('/admin/dashboard');
+            }
             return res.status(403).json({
                 success: false,
                 error: 'User access required'

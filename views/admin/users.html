@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Otaq Detalları - İnventar İdarəetmə Sistemi</title>
+    <title>İstifadəçilər - İnventar İdarəetmə Sistemi</title>
     <link rel="stylesheet" href="/css/base.css">
     <link rel="stylesheet" href="/css/admin.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -35,7 +35,7 @@
                         <span>Binalar</span>
                     </a>
                 </li>
-                <li class="active">
+                <li>
                     <a href="/admin/rooms">
                         <span class="nav-icon"><i class="fas fa-door-open"></i></span>
                         <span>Otaqlar</span>
@@ -47,7 +47,7 @@
                         <span>İnventar</span>
                     </a>
                 </li>
-                <li>
+                <li class="active">
                     <a href="/admin/users">
                         <span class="nav-icon"><i class="fas fa-users"></i></span>
                         <span>İstifadəçilər</span>
@@ -72,8 +72,8 @@
         <main class="main-content">
             <header class="admin-header">
                 <div class="header-left">
-                    <h1>Otaq Detalları</h1>
-                    <p id="room-location">Yüklənir...</p>
+                    <h1>İstifadəçilər</h1>
+                    <p>Bütün istifadəçilərin idarə edilməsi</p>
                 </div>
                 <div class="header-right">
                     <div class="user-info">
@@ -85,89 +85,52 @@
 
             <div class="content-wrapper">
                 <div class="page-header">
-                    <h2 id="room-name">Otaq Adı</h2>
+                    <h2>İstifadəçilər Siyahısı</h2>
                     <div class="page-actions">
-                        <button class="btn btn-primary" onclick="openAddItemModal()">
-                            <i class="fas fa-plus"></i> Yeni Element
-                        </button>
-                        <button class="btn btn-secondary" onclick="goBack()">
-                            <i class="fas fa-arrow-left"></i> Geri
+                        <button class="btn btn-primary" onclick="openAddUserModal()">
+                            <i class="fas fa-plus"></i> Yeni İstifadəçi
                         </button>
                     </div>
                 </div>
 
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-icon"><i class="fas fa-box"></i></div>
-                        <div class="stat-info">
-                            <span class="stat-value" id="room-total-items">0</span>
-                            <span class="stat-label">Ümumi Elementlər</span>
+                <div class="filter-bar">
+                    <div class="form-group">
+                        <label for="search-users">Axtarış</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="search-users" placeholder="İstifadəçi adını daxil edin...">
                         </div>
                     </div>
-                    
-                    <div class="stat-card">
-                        <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
-                        <div class="stat-info">
-                            <span class="stat-value" id="room-active-items">0</span>
-                            <span class="stat-label">Aktiv</span>
-                        </div>
+                    <div class="form-group">
+                        <label for="role-filter">Rol</label>
+                        <select id="role-filter">
+                            <option value="">Bütün rollar</option>
+                            <option value="admin">Admin</option>
+                            <option value="user">İstifadəçi</option>
+                        </select>
                     </div>
-                    
-                    <div class="stat-card">
-                        <div class="stat-icon"><i class="fas fa-exclamation-circle"></i></div>
-                        <div class="stat-info">
-                            <span class="stat-value" id="room-inactive-items">0</span>
-                            <span class="stat-label">Qeyri-aktiv</span>
-                        </div>
-                    </div>
-                    
-                    <div class="stat-card">
-                        <div class="stat-icon"><i class="fas fa-users"></i></div>
-                        <div class="stat-info">
-                            <span class="stat-value" id="room-capacity">0</span>
-                            <span class="stat-label">Tutumu</span>
-                        </div>
-                    </div>
+                    <button type="button" class="btn btn-primary" onclick="loadUsers()">
+                        <i class="fas fa-filter"></i> Filtrə et
+                    </button>
                 </div>
 
                 <div class="card">
                     <div class="card-header">
-                        Otaqda olan İnventar Elementləri
-                    </div>
-                    <div class="filter-bar">
-                        <div class="form-group">
-                            <label for="room-search">Axtarış</label>
-                            <div class="input-wrapper">
-                                <i class="fas fa-search"></i>
-                                <input type="text" id="room-search" placeholder="Element adını daxil edin...">
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label for="room-status-filter">Status</label>
-                            <select id="room-status-filter">
-                                <option value="">Bütün statuslar</option>
-                                <option value="active">Aktiv</option>
-                                <option value="inactive">Qeyri-aktiv</option>
-                                <option value="maintenance">Təmirdə</option>
-                            </select>
-                        </div>
-                        <button type="button" class="btn btn-primary" onclick="filterRoomItems()">
-                            <i class="fas fa-filter"></i> Filtrə et
-                        </button>
+                        İstifadəçilər
                     </div>
                     <div class="table-responsive">
                         <table class="admin-table">
                             <thead>
                                 <tr>
-                                    <th>İnventar Nömrəsi</th>
-                                    <th>Yerləşdə</th>
+                                    <th>İstifadəçi Adı</th>
+                                    <th>Rol</th>
+                                    <th>Qeydiyyat Tarixi</th>
+                                    <th>Son Daxil Olma</th>
                                     <th>Status</th>
-                                    <th>Kateqoriya</th>
-                                    <th>Məsul Şəxs</th>
                                     <th>Əməliyyatlar</th>
                                 </tr>
                             </thead>
-                            <tbody id="room-items-table-body">
+                            <tbody id="users-table-body">
                                 <tr>
                                     <td colspan="6" class="text-center">Yüklənir...</td>
                                 </tr>
@@ -179,64 +142,44 @@
         </main>
     </div>
 
-    <!-- Add Item Modal -->
-    <div class="modal" id="add-item-modal">
+    <!-- Add User Modal -->
+    <div class="modal" id="add-user-modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>Bu Otağa Yeni Element Əlavə Et</h3>
-                <button class="modal-close" onclick="closeAddItemModal()">&times;</button>
+                <h3>Yeni İstifadəçi</h3>
+                <button class="modal-close" onclick="closeAddUserModal()">&times;</button>
             </div>
             <div class="modal-body">
-                <form id="add-room-item-form">
+                <form id="add-user-form">
                     <div class="form-group">
-                        <label for="room-item-number">İnventar Nömrəsi</label>
-                        <div class="input-wrapper">
-                            <i class="fas fa-hashtag"></i>
-                            <input type="text" id="room-item-number" required>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="room-item-location">Yerləşdə</label>
-                        <div class="input-wrapper">
-                            <i class="fas fa-map-marker-alt"></i>
-                            <input type="text" id="room-item-location" required>
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="room-item-status">Status</label>
-                            <select id="room-item-status" required>
-                                <option value="">Seçin</option>
-                                <option value="active">Aktiv</option>
-                                <option value="inactive">Qeyri-aktiv</option>
-                                <option value="maintenance">Təmirdə</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="room-item-category">Kateqoriya</label>
-                            <select id="room-item-category" required>
-                                <option value="">Seçin</option>
-                                <option value="mebel">Mebel</option>
-                                <option value="kompüter">Kompüter avadanlığı</option>
-                                <option value="ofis">Ofis avadanlığı</option>
-                                <option value="digər">Digər</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="room-item-responsible">Məsul Şəxs</label>
+                        <label for="user-username">İstifadəçi Adı</label>
                         <div class="input-wrapper">
                             <i class="fas fa-user"></i>
-                            <input type="text" id="room-item-responsible" required>
+                            <input type="text" id="user-username" required>
                         </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="user-password">Şifrə</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-lock"></i>
+                            <input type="password" id="user-password" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="user-role">Rol</label>
+                        <select id="user-role-select" required>
+                            <option value="">Seçin</option>
+                            <option value="admin">Admin</option>
+                            <option value="user">İstifadəçi</option>
+                        </select>
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" onclick="closeAddItemModal()">
+                <button type="button" class="btn btn-secondary" onclick="closeAddUserModal()">
                     Ləğv et
                 </button>
-                <button type="button" class="btn btn-primary" onclick="addRoomItem()">
+                <button type="button" class="btn btn-primary" onclick="addUser()">
                     <i class="fas fa-save"></i> Yadda saxla
                 </button>
             </div>
@@ -244,7 +187,6 @@
     </div>
 
     <script src="/js/main.js"></script>
-    <script src="/js/admin/room-detail.js"></script>
     <script>
         // Logout function
         async function logout() {
@@ -265,31 +207,102 @@
             }
         }
         
-        // Go back function
-        function goBack() {
-            window.history.back();
-        }
-        
         // Modal functions
-        function openAddItemModal() {
-            document.getElementById('add-item-modal').classList.add('active');
+        function openAddUserModal() {
+            document.getElementById('add-user-modal').classList.add('active');
         }
         
-        function closeAddItemModal() {
-            document.getElementById('add-item-modal').classList.remove('active');
+        function closeAddUserModal() {
+            document.getElementById('add-user-modal').classList.remove('active');
         }
         
-        // Add room item function
-        function addRoomItem() {
-            if (typeof addItemToRoom === 'function') {
-                addItemToRoom();
+        // Add user function
+        async function addUser() {
+            const username = document.getElementById('user-username').value.trim();
+            const password = document.getElementById('user-password').value;
+            const role = document.getElementById('user-role-select').value;
+            
+            if (!username || !password || !role) {
+                showAlert('Bütün sahələr tələb olunur', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/users', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password, role })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    showAlert('İstifadəçi uğurla yaradıldı!', 'success');
+                    closeAddUserModal();
+                    loadUsers();
+                } else {
+                    showAlert(data.error || 'Xəta baş verdi', 'error');
+                }
+            } catch (error) {
+                showAlert('Server xəta: ' + error.message, 'error');
             }
         }
         
-        // Filter room items function
-        function filterRoomItems() {
-            if (typeof filterItems === 'function') {
-                filterItems();
+        // Load users function
+        async function loadUsers() {
+            try {
+                const response = await fetch('/api/users', {
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const data = await response.json();
+                if (data.success) {
+                    const tableBody = document.getElementById('users-table-body');
+                    if (data.data.length === 0) {
+                        tableBody.innerHTML = '<tr><td colspan="6" class="text-center">Heç bir istifadəçi tapılmadı</td></tr>';
+                        return;
+                    }
+                    
+                    tableBody.innerHTML = data.data.map(user => `
+                        <tr>
+                            <td>${user.username}</td>
+                            <td><span class="badge badge-${user.role === 'admin' ? 'info' : 'success'}">${user.role === 'admin' ? 'Admin' : 'İstifadəçi'}</span></td>
+                            <td>${new Date(user.created_at).toLocaleDateString('az-AZ')}</td>
+                            <td>-</td>
+                            <td><span class="badge badge-success">Aktiv</span></td>
+                            <td>
+                                <button class="btn btn-danger btn-icon" onclick="deleteUser('${user.id}')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('Error loading users:', error);
+            }
+        }
+        
+        // Delete user function
+        async function deleteUser(userId) {
+            if (!confirm('Silmək istədiyinizə əminsiniz?')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/users/${userId}`, {
+                    method: 'DELETE'
+                });
+                const data = await response.json();
+                if (data.success) {
+                    showAlert('İstifadəçi uğurla silindi!', 'success');
+                    loadUsers();
+                } else {
+                    showAlert(data.error || 'Xəta baş verdi', 'error');
+                }
+            } catch (error) {
+                showAlert('Server xəta: ' + error.message, 'error');
             }
         }
         
@@ -323,6 +336,7 @@
         // Initialize on page load
         document.addEventListener('DOMContentLoaded', function() {
             loadUserInfo();
+            loadUsers();
         });
     </script>
 </body>

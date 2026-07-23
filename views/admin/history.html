@@ -6,6 +6,7 @@
     <title>Tarixçə - İnventar İdarəetmə Sistemi</title>
     <link rel="stylesheet" href="/css/base.css">
     <link rel="stylesheet" href="/css/admin.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
     <div class="admin-container">
@@ -18,50 +19,50 @@
             <ul class="nav-menu">
                 <li>
                     <a href="/admin/dashboard">
-                        <span class="nav-icon">📊</span>
+                        <span class="nav-icon"><i class="fas fa-chart-line"></i></span>
                         <span>İdarə Paneli</span>
                     </a>
                 </li>
                 <li>
                     <a href="/admin/organizations">
-                        <span class="nav-icon">🏢</span>
+                        <span class="nav-icon"><i class="fas fa-building"></i></span>
                         <span>Təşkilatlar</span>
                     </a>
                 </li>
                 <li>
                     <a href="/admin/buildings">
-                        <span class="nav-icon">🏗️</span>
+                        <span class="nav-icon"><i class="fas fa-city"></i></span>
                         <span>Binalar</span>
                     </a>
                 </li>
                 <li>
                     <a href="/admin/rooms">
-                        <span class="nav-icon">🚪</span>
+                        <span class="nav-icon"><i class="fas fa-door-open"></i></span>
                         <span>Otaqlar</span>
                     </a>
                 </li>
                 <li>
                     <a href="/admin/inventory">
-                        <span class="nav-icon">📦</span>
+                        <span class="nav-icon"><i class="fas fa-boxes"></i></span>
                         <span>İnventar</span>
                     </a>
                 </li>
                 <li>
                     <a href="/admin/users">
-                        <span class="nav-icon">👥</span>
+                        <span class="nav-icon"><i class="fas fa-users"></i></span>
                         <span>İstifadəçilər</span>
                     </a>
                 </li>
                 <li class="active">
                     <a href="/admin/history">
-                        <span class="nav-icon">📜</span>
+                        <span class="nav-icon"><i class="fas fa-history"></i></span>
                         <span>Tarixçə</span>
                     </a>
                 </li>
             </ul>
             <div class="nav-footer">
                 <a href="#" onclick="logout()" class="logout-btn">
-                    <span class="nav-icon">👋</span>
+                    <span class="nav-icon"><i class="fas fa-sign-out-alt"></i></span>
                     <span>Çıxış</span>
                 </a>
             </div>
@@ -72,7 +73,7 @@
             <header class="admin-header">
                 <div class="header-left">
                     <h1>Tarixçə</h1>
-                    <p>Sistemdə edilmiş bütün dəyişikliklər</p>
+                    <p>Bütün dəyişikliklərin tarixçəsi</p>
                 </div>
                 <div class="header-right">
                     <div class="user-info">
@@ -86,93 +87,138 @@
                 <div class="page-header">
                     <h2>Dəyişikliklər Tarixçəsi</h2>
                     <div class="page-actions">
-                        <button class="btn btn-success" onclick="exportToExcel()">
-                            <span>📥</span> Excelə İxrac Et
+                        <button class="btn btn-success" onclick="exportHistory()">
+                            <i class="fas fa-file-export"></i> Excelə ixrac et
                         </button>
                     </div>
                 </div>
 
-                <!-- Date Range Filter -->
                 <div class="filter-bar">
                     <div class="form-group">
-                        <label>Başlanğıc Tarix</label>
-                        <input type="date" id="start-date">
+                        <label for="start-date">Başlanğıc Tarix</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-calendar-alt"></i>
+                            <input type="date" id="start-date">
+                        </div>
                     </div>
                     <div class="form-group">
-                        <label>Bitmə Tarix</label>
-                        <input type="date" id="end-date">
+                        <label for="end-date">Bitmə Tarix</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-calendar-alt"></i>
+                            <input type="date" id="end-date">
+                        </div>
                     </div>
                     <div class="form-group">
-                        <label>Axtarış</label>
-                        <input type="text" id="search-input" placeholder="Təşkilat, bina, otaq, məsul şəxs...">
-                    </div>
-                    <div class="form-group">
-                        <label>Əməliyyat Növü</label>
-                        <select id="action-type-filter">
+                        <label for="action-type">Əməliyyat Növü</label>
+                        <select id="action-type">
                             <option value="">Bütün əməliyyatlar</option>
-                            <option value="create">Yaradılma</option>
-                            <option value="update">Yenilənmə</option>
-                            <option value="delete">Silinmə</option>
+                            <option value="create">Yaradıldı</option>
+                            <option value="update">Yeniləndi</option>
+                            <option value="delete">Silindi</option>
+                            <option value="login">Daxil oldu</option>
                         </select>
                     </div>
-                    <button class="btn btn-info" onclick="applyFilters()">
-                        Tətbiq Et
-                    </button>
-                    <button class="btn" onclick="resetFilters()">
-                        Sıfırla
+                    <div class="form-group">
+                        <label for="search-history">Axtarış</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="search-history" placeholder="Açar söz daxil edin...">
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-primary" onclick="loadHistory()">
+                        <i class="fas fa-filter"></i> Filtrə et
                     </button>
                 </div>
 
-                <!-- History Table -->
-                <div class="table-container">
-                    <table class="admin-table">
-                        <thead>
-                            <tr>
-                                <th>Tarix</th>
-                                <th>Təşkilat</th>
-                                <th>Bina</th>
-                                <th>Otaq</th>
-                                <th>Məsul Şəxs</th>
-                                <th>Əməliyyat</th>
-                                <th>Köhnə Dəyərlər</th>
-                                <th>Yeni Dəyərlər</th>
-                            </tr>
-                        </thead>
-                        <tbody id="history-table-body">
-                            <!-- History logs will be loaded here -->
-                            <tr>
-                                <td colspan="8" class="text-center">Yüklənir...</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- Pagination -->
-                <div class="pagination">
-                    <button class="btn" id="prev-page" onclick="previousPage()">Öncəki</button>
-                    <span id="page-info">Səhifə 1 / 1</span>
-                    <button class="btn" id="next-page" onclick="nextPage()">Növbəti</button>
+                <div class="card">
+                    <div class="card-header">
+                        Tarixçə Qeydləri
+                    </div>
+                    <div class="table-responsive">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Tarix</th>
+                                    <th>Təşkilat</th>
+                                    <th>Bina</th>
+                                    <th>Otaq</th>
+                                    <th>Məsul Şəxs</th>
+                                    <th>Əməliyyat</th>
+                                    <th>Ətraflı</th>
+                                </tr>
+                            </thead>
+                            <tbody id="history-table-body">
+                                <tr>
+                                    <td colspan="7" class="text-center">Yüklənir...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </main>
     </div>
 
-    <!-- Export Progress Modal -->
-    <div class="modal" id="export-modal">
-        <div class="modal-content modal-small">
-            <div class="modal-header">
-                <h3>Excelə İxrac Edilir</h3>
-            </div>
-            <div class="modal-body">
-                <p>Tarixçə məlumatları Excel faylına ixrac edilir. Zəhmət olmasa, gözləyin...</p>
-                <div class="progress-bar">
-                    <div class="progress-fill" id="export-progress"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <script src="/js/main.js"></script>
     <script src="/js/admin/history.js"></script>
+    <script>
+        // Logout function
+        async function logout() {
+            try {
+                const response = await fetch('/api/auth/logout', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const data = await response.json();
+                if (data.success) {
+                    window.location.href = '/login';
+                }
+            } catch (error) {
+                console.error('Logout error:', error);
+                window.location.href = '/login';
+            }
+        }
+        
+        // Export history function
+        function exportHistory() {
+            if (typeof exportHistoryToExcel === 'function') {
+                exportHistoryToExcel();
+            }
+        }
+        
+        // Load history function
+        function loadHistory() {
+            if (typeof loadHistoryData === 'function') {
+                loadHistoryData();
+            }
+        }
+        
+        // Load user info
+        async function loadUserInfo() {
+            try {
+                const response = await fetch('/api/auth/me', {
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const data = await response.json();
+                if (data.success && data.data) {
+                    document.getElementById('current-user').textContent = data.data.username;
+                    const roleBadge = document.getElementById('user-role');
+                    roleBadge.textContent = data.data.role === 'admin' ? 'Admin' : 'İstifadəçi';
+                    roleBadge.className = `badge badge-${data.data.role === 'admin' ? 'info' : 'success'}`;
+                }
+            } catch (error) {
+                console.error('Error loading user info:', error);
+            }
+        }
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadUserInfo();
+        });
+    </script>
 </body>
 </html>

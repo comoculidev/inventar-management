@@ -6,6 +6,7 @@
     <title>Mənim İnventarım - İnventar İdarəetmə Sistemi</title>
     <link rel="stylesheet" href="/css/base.css">
     <link rel="stylesheet" href="/css/admin.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
     <div class="admin-container">
@@ -18,26 +19,26 @@
             <ul class="nav-menu">
                 <li>
                     <a href="/user-panel">
-                        <span class="nav-icon">📊</span>
+                        <span class="nav-icon"><i class="fas fa-chart-line"></i></span>
                         <span>İdarə Paneli</span>
                     </a>
                 </li>
                 <li class="active">
                     <a href="/user-panel/my-items">
-                        <span class="nav-icon">📦</span>
+                        <span class="nav-icon"><i class="fas fa-boxes"></i></span>
                         <span>Mənim İnventarım</span>
                     </a>
                 </li>
                 <li>
                     <a href="/user-panel/profile">
-                        <span class="nav-icon">👤</span>
+                        <span class="nav-icon"><i class="fas fa-user"></i></span>
                         <span>Profilim</span>
                     </a>
                 </li>
             </ul>
             <div class="nav-footer">
                 <a href="#" onclick="logout()" class="logout-btn">
-                    <span class="nav-icon">👋</span>
+                    <span class="nav-icon"><i class="fas fa-sign-out-alt"></i></span>
                     <span>Çıxış</span>
                 </a>
             </div>
@@ -48,12 +49,12 @@
             <header class="admin-header">
                 <div class="header-left">
                     <h1>Mənim İnventarım</h1>
-                    <p>Mənim məsul olduğum inventar elementləri</p>
+                    <p>Məsul olduğunuz inventar elementləri</p>
                 </div>
                 <div class="header-right">
                     <div class="user-info">
                         <span id="current-user">İstifadəçi</span>
-                        <span id="user-role" class="badge badge-success">İstifadəçi</span>
+                        <span class="badge badge-success">İstifadəçi</span>
                     </div>
                 </div>
             </header>
@@ -61,60 +62,55 @@
             <div class="content-wrapper">
                 <div class="page-header">
                     <h2>Mənim İnventar Elementlərim</h2>
+                    <div class="page-actions">
+                        <button class="btn btn-primary" onclick="refreshItems()">
+                            <i class="fas fa-sync-alt"></i> Yenilə
+                        </button>
+                    </div>
                 </div>
 
-                <!-- Filter Bar -->
                 <div class="filter-bar">
                     <div class="form-group">
-                        <label>Axtarış</label>
-                        <input type="text" id="search-input" placeholder="İnventar nömrəsi, yerləşməsi...">
+                        <label for="search-items">Axtarış</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="search-items" placeholder="Element adını daxil edin...">
+                        </div>
                     </div>
                     <div class="form-group">
-                        <label>Status</label>
+                        <label for="status-filter">Status</label>
                         <select id="status-filter">
                             <option value="">Bütün statuslar</option>
                             <option value="active">Aktiv</option>
                             <option value="inactive">Qeyri-aktiv</option>
                             <option value="maintenance">Təmirdə</option>
-                            <option value="lost">İtkin</option>
                         </select>
                     </div>
-                    <button class="btn btn-info" onclick="applyFilters()">
-                        Tətbiq Et
-                    </button>
-                    <button class="btn" onclick="resetFilters()">
-                        Sıfırla
-                    </button>
                 </div>
 
-                <!-- Items Table -->
-                <div class="table-container">
-                    <table class="admin-table">
-                        <thead>
-                            <tr>
-                                <th>İnventar Nömrəsi</th>
-                                <th>Yerləşməsi</th>
-                                <th>Status</th>
-                                <th>Kateqoriya</th>
-                                <th>Otaq</th>
-                                <th>Bina</th>
-                                <th>Təşkilat</th>
-                            </tr>
-                        </thead>
-                        <tbody id="items-table-body">
-                            <!-- Items will be loaded here -->
-                            <tr>
-                                <td colspan="7" class="text-center">Yüklənir...</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- Pagination -->
-                <div class="pagination">
-                    <button class="btn" id="prev-page" onclick="previousPage()">Öncəki</button>
-                    <span id="page-info">Səhifə 1 / 1</span>
-                    <button class="btn" id="next-page" onclick="nextPage()">Növbəti</button>
+                <div class="card">
+                    <div class="card-header">
+                        İnventar Elementləri
+                    </div>
+                    <div class="table-responsive">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>İnventar Nömrəsi</th>
+                                    <th>Yerləşdə</th>
+                                    <th>Status</th>
+                                    <th>Kateqoriya</th>
+                                    <th>Məsul Şəxs</th>
+                                    <th>Əməliyyatlar</th>
+                                </tr>
+                            </thead>
+                            <tbody id="items-table-body">
+                                <tr>
+                                    <td colspan="6" class="text-center">Yüklənir...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </main>
@@ -122,5 +118,32 @@
 
     <script src="/js/main.js"></script>
     <script src="/js/user-my-items.js"></script>
+    <script>
+        // Logout function
+        async function logout() {
+            try {
+                const response = await fetch('/api/auth/logout', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const data = await response.json();
+                if (data.success) {
+                    window.location.href = '/login';
+                }
+            } catch (error) {
+                console.error('Logout error:', error);
+                window.location.href = '/login';
+            }
+        }
+        
+        // Refresh items function
+        function refreshItems() {
+            if (typeof loadMyItems === 'function') {
+                loadMyItems();
+            }
+        }
+    </script>
 </body>
 </html>

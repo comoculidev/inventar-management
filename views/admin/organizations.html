@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>İdarə Paneli - İnventar İdarəetmə Sistemi</title>
+    <title>Təşkilatlar - İnventar İdarəetmə Sistemi</title>
     <link rel="stylesheet" href="/css/base.css">
     <link rel="stylesheet" href="/css/admin.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -17,13 +17,13 @@
                 <p>İdarə Paneli</p>
             </div>
             <ul class="nav-menu">
-                <li class="active">
+                <li>
                     <a href="/admin/dashboard">
                         <span class="nav-icon"><i class="fas fa-chart-line"></i></span>
                         <span>İdarə Paneli</span>
                     </a>
                 </li>
-                <li>
+                <li class="active">
                     <a href="/admin/organizations">
                         <span class="nav-icon"><i class="fas fa-building"></i></span>
                         <span>Təşkilatlar</span>
@@ -72,8 +72,8 @@
         <main class="main-content">
             <header class="admin-header">
                 <div class="header-left">
-                    <h1>İdarə Paneli</h1>
-                    <p>Xoş gəlmisiniz!</p>
+                    <h1>Təşkilatlar</h1>
+                    <p>Bütün təşkilatların idarə edilməsi</p>
                 </div>
                 <div class="header-right">
                     <div class="user-info">
@@ -84,73 +84,92 @@
             </header>
 
             <div class="content-wrapper">
-                <h2>Statistika</h2>
-                
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-icon"><i class="fas fa-building"></i></div>
-                        <div class="stat-info">
-                            <span class="stat-value" id="total-organizations">0</span>
-                            <span class="stat-label">Təşkilatlar</span>
-                        </div>
-                    </div>
-                    
-                    <div class="stat-card">
-                        <div class="stat-icon"><i class="fas fa-city"></i></div>
-                        <div class="stat-info">
-                            <span class="stat-value" id="total-buildings">0</span>
-                            <span class="stat-label">Binalar</span>
-                        </div>
-                    </div>
-                    
-                    <div class="stat-card">
-                        <div class="stat-icon"><i class="fas fa-door-open"></i></div>
-                        <div class="stat-info">
-                            <span class="stat-value" id="total-rooms">0</span>
-                            <span class="stat-label">Otaqlar</span>
-                        </div>
-                    </div>
-                    
-                    <div class="stat-card">
-                        <div class="stat-icon"><i class="fas fa-boxes"></i></div>
-                        <div class="stat-info">
-                            <span class="stat-value" id="total-items">0</span>
-                            <span class="stat-label">İnventar</span>
-                        </div>
-                    </div>
-                    
-                    <div class="stat-card">
-                        <div class="stat-icon"><i class="fas fa-users"></i></div>
-                        <div class="stat-info">
-                            <span class="stat-value" id="total-users">0</span>
-                            <span class="stat-label">İstifadəçilər</span>
-                        </div>
+                <div class="page-header">
+                    <h2>Təşkilatlar Siyahısı</h2>
+                    <div class="page-actions">
+                        <button class="btn btn-primary" onclick="openAddOrganizationModal()">
+                            <i class="fas fa-plus"></i> Yeni Təşkilat
+                        </button>
                     </div>
                 </div>
 
-                <div class="quick-actions">
-                    <h3>Sürətli əməliyyatlar</h3>
-                    <div class="action-buttons">
-                        <a href="/admin/organizations" class="btn btn-primary">
-                            <span>+</span> Təşkilat Əlavə Et
-                        </a>
-                        <a href="/admin/buildings" class="btn btn-primary">
-                            <span>+</span> Bina Əlavə Et
-                        </a>
-                        <a href="/admin/rooms" class="btn btn-primary">
-                            <span>+</span> Otaq Əlavə Et
-                        </a>
-                        <a href="/admin/inventory" class="btn btn-primary">
-                            <span>+</span> İnventar Əlavə Et
-                        </a>
+                <div class="filter-bar">
+                    <div class="form-group">
+                        <label for="search-organizations">Axtarış</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="search-organizations" placeholder="Təşkilat adını daxil edin...">
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-primary" onclick="loadOrganizations()">
+                        <i class="fas fa-filter"></i> Axtar
+                    </button>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        Təşkilatlar
+                    </div>
+                    <div class="table-responsive">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Təşkilat Adı</th>
+                                    <th>Təsviri</th>
+                                    <th>Binaların Sayı</th>
+                                    <th>Yaranma Tarixi</th>
+                                    <th>Əməliyyatlar</th>
+                                </tr>
+                            </thead>
+                            <tbody id="organizations-table-body">
+                                <tr>
+                                    <td colspan="5" class="text-center">Yüklənir...</td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
         </main>
     </div>
 
+    <!-- Add Organization Modal -->
+    <div class="modal" id="add-organization-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Yeni Təşkilat</h3>
+                <button class="modal-close" onclick="closeAddOrganizationModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="add-organization-form">
+                    <div class="form-group">
+                        <label for="organization-name">Təşkilat Adı</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-building"></i>
+                            <input type="text" id="organization-name" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="organization-description">Təsviri</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-align-left"></i>
+                            <textarea id="organization-description" rows="3"></textarea>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeAddOrganizationModal()">
+                    Ləğv et
+                </button>
+                <button type="button" class="btn btn-primary" onclick="addOrganization()">
+                    <i class="fas fa-save"></i> Yadda saxla
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script src="/js/main.js"></script>
-    <script src="/js/admin/dashboard.js"></script>
     <script>
         // Logout function
         async function logout() {
@@ -171,6 +190,27 @@
             }
         }
         
+        // Modal functions
+        function openAddOrganizationModal() {
+            document.getElementById('add-organization-modal').classList.add('active');
+        }
+        
+        function closeAddOrganizationModal() {
+            document.getElementById('add-organization-modal').classList.remove('active');
+        }
+        
+        // Add organization function
+        function addOrganization() {
+            // Implementation would be added here
+            showAlert('Təşkilat əlavə etmək funksiyası hazırda aktiv deyil', 'info');
+        }
+        
+        // Load organizations function
+        function loadOrganizations() {
+            // Implementation would be added here
+            showAlert('Təşkilatları yükləmək funksiyası hazırda aktiv deyil', 'info');
+        }
+        
         // Load user info
         async function loadUserInfo() {
             try {
@@ -188,6 +228,13 @@
                 }
             } catch (error) {
                 console.error('Error loading user info:', error);
+            }
+        }
+        
+        // Close modals on outside click
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.classList.remove('active');
             }
         }
         

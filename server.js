@@ -37,17 +37,57 @@ app.set('views', path.join(__dirname, 'views'));
 app.engine('html', require('ejs').renderFile);
 app.set('view engine', 'html');
 
+// Login Route
+app.get('/login', (req, res) => {
+    res.sendFile(path.join(__dirname, 'views', 'login.html'));
+});
+
+// Home route - redirect to login if not authenticated, otherwise redirect based on role
+app.get('/', (req, res) => {
+    // Check if user is authenticated by checking for token cookie
+    if (req.cookies.token) {
+        // Try to verify the token
+        const jwt = require('jsonwebtoken');
+        try {
+            const decoded = jwt.verify(req.cookies.token, process.env.JWT_SECRET || 'your_jwt_secret_key_here');
+            // Redirect based on role
+            if (decoded.role === 'admin') {
+                return res.redirect('/admin/dashboard');
+            } else {
+                return res.redirect('/user-panel');
+            }
+        } catch (error) {
+            // Token is invalid or expired, redirect to login
+            return res.redirect('/login');
+        }
+    }
+    // Not authenticated, redirect to login
+    res.redirect('/login');
+});
+
 // Admin Routes (protected)
 app.get('/admin/dashboard', verifyAuth, verifyAdmin, (req, res) => {
     res.sendFile(path.join(__dirname, 'views', 'admin', 'dashboard.html'));
+});
+
+app.get('/admin/organizations', verifyAuth, verifyAdmin, (req, res) => {
+    res.sendFile(path.join(__dirname, 'views', 'admin', 'organizations.html'));
+});
+
+app.get('/admin/buildings', verifyAuth, verifyAdmin, (req, res) => {
+    res.sendFile(path.join(__dirname, 'views', 'admin', 'buildings.html'));
+});
+
+app.get('/admin/rooms', verifyAuth, verifyAdmin, (req, res) => {
+    res.sendFile(path.join(__dirname, 'views', 'admin', 'rooms.html'));
 });
 
 app.get('/admin/inventory', verifyAuth, verifyAdmin, (req, res) => {
     res.sendFile(path.join(__dirname, 'views', 'admin', 'inventory.html'));
 });
 
-app.get('/admin/rooms', verifyAuth, verifyAdmin, (req, res) => {
-    res.sendFile(path.join(__dirname, 'views', 'admin', 'rooms.html'));
+app.get('/admin/users', verifyAuth, verifyAdmin, (req, res) => {
+    res.sendFile(path.join(__dirname, 'views', 'admin', 'users.html'));
 });
 
 app.get('/admin/history', verifyAuth, verifyAdmin, (req, res) => {
@@ -83,11 +123,6 @@ app.use('/api/dashboard', verifyAuth, require('./routes/dashboard'));
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/user', verifyAuth, verifyUser, require('./routes/user'));
 
-// Home route
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'views', 'index.html'));
-});
-
 // Error handling middleware
 app.use((err, req, res, next) => {
     console.error(err.stack);
@@ -97,8 +132,12 @@ app.use((err, req, res, next) => {
     });
 });
 
-// 404 handler
-app.use((req, res) => {
+// 404 handler - redirect to login for HTML requests
+app.use((req, res, next) => {
+    // If the request accepts HTML and is not an API request, redirect to login
+    if (req.accepts('html') && !req.path.startsWith('/api/') && !req.path.startsWith('/css/') && !req.path.startsWith('/js/') && !req.path.startsWith('/images/')) {
+        return res.redirect('/login');
+    }
     res.status(404).json({
         success: false,
         error: 'Not Found'
@@ -109,6 +148,7 @@ app.use((req, res) => {
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
     console.log(`Access the application at http://localhost:${PORT}`);
+    console.log(`Login page: http://localhost:${PORT}/login`);
 });
 
 module.exports = app;

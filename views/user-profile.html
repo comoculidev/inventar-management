@@ -6,6 +6,7 @@
     <title>Profilim - İnventar İdarəetmə Sistemi</title>
     <link rel="stylesheet" href="/css/base.css">
     <link rel="stylesheet" href="/css/admin.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
     <div class="admin-container">
@@ -18,26 +19,26 @@
             <ul class="nav-menu">
                 <li>
                     <a href="/user-panel">
-                        <span class="nav-icon">📊</span>
+                        <span class="nav-icon"><i class="fas fa-chart-line"></i></span>
                         <span>İdarə Paneli</span>
                     </a>
                 </li>
                 <li>
                     <a href="/user-panel/my-items">
-                        <span class="nav-icon">📦</span>
+                        <span class="nav-icon"><i class="fas fa-boxes"></i></span>
                         <span>Mənim İnventarım</span>
                     </a>
                 </li>
                 <li class="active">
                     <a href="/user-panel/profile">
-                        <span class="nav-icon">👤</span>
+                        <span class="nav-icon"><i class="fas fa-user"></i></span>
                         <span>Profilim</span>
                     </a>
                 </li>
             </ul>
             <div class="nav-footer">
                 <a href="#" onclick="logout()" class="logout-btn">
-                    <span class="nav-icon">👋</span>
+                    <span class="nav-icon"><i class="fas fa-sign-out-alt"></i></span>
                     <span>Çıxış</span>
                 </a>
             </div>
@@ -53,34 +54,57 @@
                 <div class="header-right">
                     <div class="user-info">
                         <span id="current-user">İstifadəçi</span>
-                        <span id="user-role" class="badge badge-success">İstifadəçi</span>
+                        <span class="badge badge-success">İstifadəçi</span>
                     </div>
                 </div>
             </header>
 
             <div class="content-wrapper">
-                <div class="card profile-card">
-                    <h2>İstifadəçi Məlumatları</h2>
-                    
-                    <div class="profile-info">
-                        <div class="profile-field">
-                            <label>İstifadəçi Adı</label>
-                            <span id="profile-username">-</span>
-                        </div>
-                        <div class="profile-field">
-                            <label>Rolu</label>
-                            <span id="profile-role">-</span>
-                        </div>
-                        <div class="profile-field">
-                            <label>Qeydiyyat Tarixi</label>
-                            <span id="profile-created">-</span>
-                        </div>
-                    </div>
+                <div class="page-header">
+                    <h2>İstifadəçi Profilı</h2>
                 </div>
 
-                <div class="card">
-                    <h2>Təhlükəsizlik</h2>
-                    <p>Şifrəni dəyişmək üçün admin ilə əlaqə saxlayın.</p>
+                <div class="admin-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="profile-username">İstifadəçi Adı</label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-user"></i>
+                                <input type="text" id="profile-username" readonly>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="profile-role">Rol</label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-tag"></i>
+                                <input type="text" id="profile-role" readonly>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="profile-created">Qeydiyyat Tarixi</label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-calendar"></i>
+                                <input type="text" id="profile-created" readonly>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="profile-id">İstifadəçi ID</label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-hashtag"></i>
+                                <input type="text" id="profile-id" readonly>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Şifrəni Dəyiş</label>
+                        <p style="color: var(--text-light); font-size: 0.9rem;">
+                            Şifrəni dəyişmək üçün admin ilə əlaqə saxlayın.
+                        </p>
+                    </div>
                 </div>
             </div>
         </main>
@@ -88,5 +112,61 @@
 
     <script src="/js/main.js"></script>
     <script src="/js/user-profile.js"></script>
+    <script>
+        // Logout function
+        async function logout() {
+            try {
+                const response = await fetch('/api/auth/logout', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const data = await response.json();
+                if (data.success) {
+                    window.location.href = '/login';
+                }
+            } catch (error) {
+                console.error('Logout error:', error);
+                window.location.href = '/login';
+            }
+        }
+        
+        // Load profile info
+        async function loadProfileInfo() {
+            try {
+                const response = await fetch('/api/auth/me', {
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const data = await response.json();
+                if (data.success && data.data) {
+                    document.getElementById('profile-username').value = data.data.username;
+                    document.getElementById('profile-role').value = data.data.role === 'admin' ? 'Admin' : 'İstifadəçi';
+                    document.getElementById('profile-id').value = data.data.id;
+                    
+                    // Format created date
+                    if (data.data.created_at) {
+                        const date = new Date(data.data.created_at);
+                        document.getElementById('profile-created').value = date.toLocaleDateString('az-AZ', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading profile info:', error);
+            }
+        }
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadProfileInfo();
+        });
+    </script>
 </body>
 </html>
