@@ -70,7 +70,7 @@ class HistoryLogsController {
 
     static async getByDateRange(req, res) {
         try {
-            const { startDate, endDate } = req.query;
+            const { startDate, endDate, actionType, search, page = 1, limit = 50 } = req.query;
             
             if (!startDate || !endDate) {
                 return res.status(400).json({
@@ -79,11 +79,25 @@ class HistoryLogsController {
                 });
             }
             
-            const logs = await HistoryLog.getByDateRange(startDate, endDate);
+            const options = {
+                actionType,
+                search,
+                page: parseInt(page),
+                limit: parseInt(limit)
+            };
+            
+            const logs = await HistoryLog.getByDateRange(startDate, endDate, options);
+            const total = await HistoryLog.countByDateRange(startDate, endDate, options);
             
             res.json({
                 success: true,
-                data: logs
+                data: logs,
+                pagination: {
+                    page: parseInt(page),
+                    limit: parseInt(limit),
+                    total,
+                    totalPages: Math.ceil(total / limit)
+                }
             });
         } catch (error) {
             console.error('Error fetching history logs by date range:', error);
@@ -105,25 +119,6 @@ class HistoryLogsController {
             });
         } catch (error) {
             console.error('Error fetching history logs by action type:', error);
-            res.status(500).json({
-                success: false,
-                error: 'Server error'
-            });
-        }
-    }
-
-    static async getPaginated(req, res) {
-        try {
-            const { page = 1, limit = 10 } = req.query;
-            
-            const result = await HistoryLog.getPaginated(parseInt(page, 10), parseInt(limit, 10));
-            
-            res.json({
-                success: true,
-                ...result
-            });
-        } catch (error) {
-            console.error('Error fetching paginated history logs:', error);
             res.status(500).json({
                 success: false,
                 error: 'Server error'
@@ -178,6 +173,24 @@ class HistoryLogsController {
             });
         } catch (error) {
             console.error('Error fetching history logs by room:', error);
+            res.status(500).json({
+                success: false,
+                error: 'Server error'
+            });
+        }
+    }
+
+    static async getPaginated(req, res) {
+        try {
+            const { page = 1, limit = 10 } = req.query;
+            const logs = await HistoryLog.getPaginated(parseInt(page), parseInt(limit));
+            
+            res.json({
+                success: true,
+                data: logs
+            });
+        } catch (error) {
+            console.error('Error fetching paginated history logs:', error);
             res.status(500).json({
                 success: false,
                 error: 'Server error'

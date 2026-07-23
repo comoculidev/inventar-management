@@ -50,6 +50,10 @@ app.get('/admin/rooms', verifyAuth, verifyAdmin, (req, res) => {
     res.sendFile(path.join(__dirname, 'views', 'admin', 'rooms.html'));
 });
 
+app.get('/admin/history', verifyAuth, verifyAdmin, (req, res) => {
+    res.sendFile(path.join(__dirname, 'views', 'admin', 'history.html'));
+});
+
 // Room detail route - matches /organization/building/room/:id
 app.get('/organization/building/room/:id', verifyAuth, verifyAdmin, (req, res) => {
     res.sendFile(path.join(__dirname, 'views', 'admin', 'room-detail.html'));

@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tarixçə - İnventar İdarəetmə Sistemi</title>
+    <link rel="stylesheet" href="/css/base.css">
+    <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+    <div class="admin-container">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <h2>İnventar</h2>
+                <p>İdarə Paneli</p>
+            </div>
+            <ul class="nav-menu">
+                <li>
+                    <a href="/admin/dashboard">
+                        <span class="nav-icon">📊</span>
+                        <span>İdarə Paneli</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/organizations">
+                        <span class="nav-icon">🏢</span>
+                        <span>Təşkilatlar</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/buildings">
+                        <span class="nav-icon">🏗️</span>
+                        <span>Binalar</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/rooms">
+                        <span class="nav-icon">🚪</span>
+                        <span>Otaqlar</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/inventory">
+                        <span class="nav-icon">📦</span>
+                        <span>İnventar</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/users">
+                        <span class="nav-icon">👥</span>
+                        <span>İstifadəçilər</span>
+                    </a>
+                </li>
+                <li class="active">
+                    <a href="/admin/history">
+                        <span class="nav-icon">📜</span>
+                        <span>Tarixçə</span>
+                    </a>
+                </li>
+            </ul>
+            <div class="nav-footer">
+                <a href="#" onclick="logout()" class="logout-btn">
+                    <span class="nav-icon">👋</span>
+                    <span>Çıxış</span>
+                </a>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="admin-header">
+                <div class="header-left">
+                    <h1>Tarixçə</h1>
+                    <p>Sistemdə edilmiş bütün dəyişikliklər</p>
+                </div>
+                <div class="header-right">
+                    <div class="user-info">
+                        <span id="current-user">İstifadəçi</span>
+                        <span id="user-role" class="badge badge-info">Admin</span>
+                    </div>
+                </div>
+            </header>
+
+            <div class="content-wrapper">
+                <div class="page-header">
+                    <h2>Dəyişikliklər Tarixçəsi</h2>
+                    <div class="page-actions">
+                        <button class="btn btn-success" onclick="exportToExcel()">
+                            <span>📥</span> Excelə İxrac Et
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Date Range Filter -->
+                <div class="filter-bar">
+                    <div class="form-group">
+                        <label>Başlanğıc Tarix</label>
+                        <input type="date" id="start-date">
+                    </div>
+                    <div class="form-group">
+                        <label>Bitmə Tarix</label>
+                        <input type="date" id="end-date">
+                    </div>
+                    <div class="form-group">
+                        <label>Axtarış</label>
+                        <input type="text" id="search-input" placeholder="Təşkilat, bina, otaq, məsul şəxs...">
+                    </div>
+                    <div class="form-group">
+                        <label>Əməliyyat Növü</label>
+                        <select id="action-type-filter">
+                            <option value="">Bütün əməliyyatlar</option>
+                            <option value="create">Yaradılma</option>
+                            <option value="update">Yenilənmə</option>
+                            <option value="delete">Silinmə</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-info" onclick="applyFilters()">
+                        Tətbiq Et
+                    </button>
+                    <button class="btn" onclick="resetFilters()">
+                        Sıfırla
+                    </button>
+                </div>
+
+                <!-- History Table -->
+                <div class="table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Tarix</th>
+                                <th>Təşkilat</th>
+                                <th>Bina</th>
+                                <th>Otaq</th>
+                                <th>Məsul Şəxs</th>
+                                <th>Əməliyyat</th>
+                                <th>Köhnə Dəyərlər</th>
+                                <th>Yeni Dəyərlər</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-table-body">
+                            <!-- History logs will be loaded here -->
+                            <tr>
+                                <td colspan="8" class="text-center">Yüklənir...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                <div class="pagination">
+                    <button class="btn" id="prev-page" onclick="previousPage()">Öncəki</button>
+                    <span id="page-info">Səhifə 1 / 1</span>
+                    <button class="btn" id="next-page" onclick="nextPage()">Növbəti</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Export Progress Modal -->
+    <div class="modal" id="export-modal">
+        <div class="modal-content modal-small">
+            <div class="modal-header">
+                <h3>Excelə İxrac Edilir</h3>
+            </div>
+            <div class="modal-body">
+                <p>Tarixçə məlumatları Excel faylına ixrac edilir. Zəhmət olmasa, gözləyin...</p>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="export-progress"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/main.js"></script>
+    <script src="/js/admin/history.js"></script>
+</body>
+</html>

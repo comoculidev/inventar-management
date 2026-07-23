@@ -54,8 +54,11 @@ class HistoryLog {
         return result.rows[0];
     }
 
-    static async getByDateRange(startDate, endDate) {
-        const result = await query(`
+    static async getByDateRange(startDate, endDate, options = {}) {
+        const { actionType, search, page = 1, limit = 50 } = options;
+        const offset = (page - 1) * limit;
+        
+        let queryStr = `
             SELECT hl.*, 
                    o.name as organization_name,
                    b.name as building_name,
@@ -65,9 +68,63 @@ class HistoryLog {
             LEFT JOIN buildings b ON hl.building_id = b.id
             LEFT JOIN rooms r ON hl.room_id = r.id
             WHERE hl.created_at BETWEEN $1 AND $2
-            ORDER BY hl.created_at DESC
-        `, [startDate, endDate]);
+        `;
+        
+        const params = [startDate, endDate];
+        
+        if (actionType) {
+            queryStr += ` AND hl.action_type = $${params.length + 1}`;
+            params.push(actionType);
+        }
+        
+        if (search) {
+            queryStr += `
+                AND (o.name ILIKE $${params.length + 1} 
+                     OR b.name ILIKE $${params.length + 1}
+                     OR r.name ILIKE $${params.length + 1}
+                     OR hl.responsible_person ILIKE $${params.length + 1})
+            `;
+            params.push(`%${search}%`);
+        }
+        
+        queryStr += ` ORDER BY hl.created_at DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
+        params.push(limit, offset);
+        
+        const result = await query(queryStr, params);
         return result.rows;
+    }
+
+    static async countByDateRange(startDate, endDate, options = {}) {
+        const { actionType, search } = options;
+        
+        let queryStr = `
+            SELECT COUNT(hl.id) as total
+            FROM history_logs hl
+            LEFT JOIN organizations o ON hl.organization_id = o.id
+            LEFT JOIN buildings b ON hl.building_id = b.id
+            LEFT JOIN rooms r ON hl.room_id = r.id
+            WHERE hl.created_at BETWEEN $1 AND $2
+        `;
+        
+        const params = [startDate, endDate];
+        
+        if (actionType) {
+            queryStr += ` AND hl.action_type = $${params.length + 1}`;
+            params.push(actionType);
+        }
+        
+        if (search) {
+            queryStr += `
+                AND (o.name ILIKE $${params.length + 1} 
+                     OR b.name ILIKE $${params.length + 1}
+                     OR r.name ILIKE $${params.length + 1}
+                     OR hl.responsible_person ILIKE $${params.length + 1})
+            `;
+            params.push(`%${search}%`);
+        }
+        
+        const result = await query(queryStr, params);
+        return parseInt(result.rows[0].total) || 0;
     }
 
     static async getByActionType(actionType) {
@@ -100,19 +157,7 @@ class HistoryLog {
             ORDER BY hl.created_at DESC
             LIMIT $1 OFFSET $2
         `, [limit, offset]);
-        
-        const countResult = await query('SELECT COUNT(*) FROM history_logs');
-        const total = parseInt(countResult.rows[0].count, 10);
-        
-        return {
-            data: result.rows,
-            pagination: {
-                page,
-                limit,
-                total,
-                totalPages: Math.ceil(total / limit)
-            }
-        };
+        return result.rows;
     }
 
     static async getByOrganization(organizationId) {
