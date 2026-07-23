@@ -16,29 +16,40 @@ let rooms = [];
 // Initialize page
 document.addEventListener('DOMContentLoaded', function() {
     loadOrganizations();
-    loadRooms();
     loadInventoryItems();
     fetchCurrentUser();
     
     // Add event listeners
-    document.getElementById('search-inventory').addEventListener('keyup', function(e) {
-        if (e.key === 'Enter') {
-            applyFilters();
-        }
-    });
+    const searchInput = document.getElementById('search-inventory');
+    if (searchInput) {
+        searchInput.addEventListener('keyup', function(e) {
+            if (e.key === 'Enter') {
+                applyFilters();
+            }
+        });
+    }
     
-    document.getElementById('organization-filter').addEventListener('change', function() {
-        loadBuildings(this.value);
-    });
+    const orgFilter = document.getElementById('organization-filter');
+    if (orgFilter) {
+        orgFilter.addEventListener('change', function() {
+            loadBuildings(this.value);
+        });
+    }
     
-    document.getElementById('building-filter').addEventListener('change', function() {
-        loadRoomsByBuilding(this.value);
-    });
+    const buildingFilter = document.getElementById('building-filter');
+    if (buildingFilter) {
+        buildingFilter.addEventListener('change', function() {
+            loadRoomsByBuilding(this.value);
+        });
+    }
     
     // Preview Excel file
-    document.getElementById('excel-file').addEventListener('change', function(e) {
-        previewExcel(e.target.files[0]);
-    });
+    const excelFile = document.getElementById('excel-file');
+    if (excelFile) {
+        excelFile.addEventListener('change', function(e) {
+            previewExcel(e.target.files[0]);
+        });
+    }
 });
 
 // Load organizations for filter
@@ -49,14 +60,30 @@ async function loadOrganizations() {
         
         if (data.success) {
             organizations = data.data;
-            const select = document.getElementById('organization-filter');
-            select.innerHTML = '<option value="">Bütün təşkilatlar</option>';
-            data.data.forEach(org => {
-                const option = document.createElement('option');
-                option.value = org.id;
-                option.textContent = org.name;
-                select.appendChild(option);
-            });
+            
+            // Populate filter dropdown
+            const filterSelect = document.getElementById('organization-filter');
+            if (filterSelect) {
+                filterSelect.innerHTML = '<option value="">Bütün təşkilatlar</option>';
+                data.data.forEach(org => {
+                    const option = document.createElement('option');
+                    option.value = org.id;
+                    option.textContent = org.name;
+                    filterSelect.appendChild(option);
+                });
+            }
+            
+            // Populate item organization dropdown
+            const itemOrgSelect = document.getElementById('item-organization');
+            if (itemOrgSelect) {
+                itemOrgSelect.innerHTML = '<option value="">Seçin</option>';
+                data.data.forEach(org => {
+                    const option = document.createElement('option');
+                    option.value = org.id;
+                    option.textContent = org.name;
+                    itemOrgSelect.appendChild(option);
+                });
+            }
         }
     } catch (error) {
         console.error('Error loading organizations:', error);
@@ -75,16 +102,22 @@ async function loadBuildings(organizationId) {
         if (data.success) {
             buildings = data.data;
             const select = document.getElementById('building-filter');
-            select.innerHTML = '<option value="">Bütün binalar</option>';
-            data.data.forEach(building => {
-                const option = document.createElement('option');
-                option.value = building.id;
-                option.textContent = building.name;
-                select.appendChild(option);
-            });
+            if (select) {
+                select.innerHTML = '<option value="">Bütün binalar</option>';
+                data.data.forEach(building => {
+                    const option = document.createElement('option');
+                    option.value = building.id;
+                    option.textContent = building.name;
+                    select.appendChild(option);
+                });
+            }
             
             // Reset building and room filters
-            document.getElementById('building-filter').value = '';
+            const buildingFilter = document.getElementById('building-filter');
+            const roomFilter = document.getElementById('room-filter');
+            if (buildingFilter) buildingFilter.value = '';
+            if (roomFilter) roomFilter.value = '';
+            
             loadRoomsByBuilding('');
         }
     } catch (error) {
@@ -92,25 +125,61 @@ async function loadBuildings(organizationId) {
     }
 }
 
-// Load rooms for filter
-async function loadRooms() {
+// Load buildings for item modal (cascading from organization)
+async function loadBuildingsForItem(organizationId) {
     try {
-        const response = await fetch('/api/rooms');
+        const url = organizationId 
+            ? `/api/buildings/organization/${organizationId}`
+            : '/api/buildings';
+        const response = await fetch(url);
         const data = await response.json();
         
         if (data.success) {
-            rooms = data.data;
-            const select = document.getElementById('room-id');
-            select.innerHTML = '<option value="">Seçin</option>';
-            data.data.forEach(room => {
-                const option = document.createElement('option');
-                option.value = room.id;
-                option.textContent = room.name;
-                select.appendChild(option);
-            });
+            const select = document.getElementById('item-building');
+            if (select) {
+                select.innerHTML = '<option value="">Seçin</option>';
+                data.data.forEach(building => {
+                    const option = document.createElement('option');
+                    option.value = building.id;
+                    option.textContent = building.name;
+                    select.appendChild(option);
+                });
+            }
+            
+            // Reset room dropdown
+            const roomSelect = document.getElementById('item-room');
+            if (roomSelect) {
+                roomSelect.innerHTML = '<option value="">Seçin</option>';
+            }
         }
     } catch (error) {
-        console.error('Error loading rooms:', error);
+        console.error('Error loading buildings for item:', error);
+    }
+}
+
+// Load rooms for item modal (cascading from building)
+async function loadRoomsForItem(buildingId) {
+    try {
+        const url = buildingId 
+            ? `/api/rooms/building/${buildingId}`
+            : '/api/rooms';
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        if (data.success) {
+            const select = document.getElementById('item-room');
+            if (select) {
+                select.innerHTML = '<option value="">Seçin</option>';
+                data.data.forEach(room => {
+                    const option = document.createElement('option');
+                    option.value = room.id;
+                    option.textContent = room.name;
+                    select.appendChild(option);
+                });
+            }
+        }
+    } catch (error) {
+        console.error('Error loading rooms for item:', error);
     }
 }
 
@@ -125,13 +194,15 @@ async function loadRoomsByBuilding(buildingId) {
         
         if (data.success) {
             const select = document.getElementById('room-id');
-            select.innerHTML = '<option value="">Seçin</option>';
-            data.data.forEach(room => {
-                const option = document.createElement('option');
-                option.value = room.id;
-                option.textContent = room.name;
-                select.appendChild(option);
-            });
+            if (select) {
+                select.innerHTML = '<option value="">Seçin</option>';
+                data.data.forEach(room => {
+                    const option = document.createElement('option');
+                    option.value = room.id;
+                    option.textContent = room.name;
+                    select.appendChild(option);
+                });
+            }
         }
     } catch (error) {
         console.error('Error loading rooms by building:', error);
@@ -142,12 +213,18 @@ async function loadRoomsByBuilding(buildingId) {
 async function loadInventoryItems() {
     try {
         const params = new URLSearchParams(currentFilters);
+        params.append('page', currentPage);
+        params.append('limit', 20);
         
         const response = await fetch(`/api/inventory-items/filter?${params}`);
         const data = await response.json();
         
         if (data.success) {
-            renderInventoryTable(data.data);
+            renderInventoryTable(data.data.data || data.data);
+            if (data.data.pagination) {
+                currentPage = data.data.pagination.page;
+                totalPages = data.data.pagination.totalPages;
+            }
         }
     } catch (error) {
         console.error('Error loading inventory items:', error);
@@ -158,6 +235,8 @@ async function loadInventoryItems() {
 // Render inventory table
 function renderInventoryTable(items) {
     const tbody = document.getElementById('inventory-table-body');
+    if (!tbody) return;
+    
     tbody.innerHTML = '';
     
     if (items.length === 0) {
@@ -170,22 +249,23 @@ function renderInventoryTable(items) {
     items.forEach(item => {
         const row = document.createElement('tr');
         row.innerHTML = `
-            <td>${item.location || '-'}</td>
-            <td><span class="badge badge-${getStatusBadgeClass(item.status)}">${item.status || '-'}</span></td>
-            <td>${item.inventory_number || '-'}</td>
-            <td>${item.responsible_person || '-'}</td>
-            <td>${item.category || '-'}</td>
-            <td>${item.room_name || '-'}</td>
+            <td>${escapeHtml(item.inventory_number || '-')}</td>
+            <td>${escapeHtml(item.location || '-')}</td>
+            <td><span class="badge badge-${getStatusBadgeClass(item.status)}">${escapeHtml(item.status || '-')}</span></td>
+            <td>${escapeHtml(item.category || '-')}</td>
+            <td>${escapeHtml(item.responsible_person || '-')}</td>
+            <td>${escapeHtml(item.room_name || item.room_id || '-')}</td>
             <td class="actions">
-                <button class="btn btn-info btn-icon" onclick="openEditItemModal('${item.id}')">✏️</button>
-                <button class="btn btn-danger btn-icon" onclick="confirmDeleteItem('${item.id}', '${item.inventory_number}')">🗑️</button>
+                <button class="btn btn-info btn-icon" onclick="openEditItemModal('${item.id}')" title="Redaktə et">
+                    \u270f\ufe0f
+                </button>
+                <button class="btn btn-danger btn-icon" onclick="confirmDeleteItem('${item.id}', '${escapeHtml(item.inventory_number || '')}')" title="Sil">
+                    \ud83d\uddd1\ufe0f
+                </button>
             </td>
         `;
         tbody.appendChild(row);
     });
-    
-    // Update pagination
-    updatePagination();
 }
 
 // Get status badge class
@@ -199,36 +279,37 @@ function getStatusBadgeClass(status) {
     }
 }
 
-// Update pagination
-function updatePagination() {
-    document.getElementById('page-info').textContent = `Səhifə ${currentPage} / ${totalPages}`;
-    document.getElementById('prev-page').disabled = currentPage === 1;
-    document.getElementById('next-page').disabled = currentPage === totalPages;
-}
-
 // Apply filters
 function applyFilters() {
     currentFilters = {
-        search: document.getElementById('search-inventory').value,
-        organizationId: document.getElementById('organization-filter').value,
-        buildingId: document.getElementById('building-filter').value,
-        category: document.getElementById('category-filter').value
+        search: document.getElementById('search-inventory')?.value || '',
+        organizationId: document.getElementById('organization-filter')?.value || '',
+        buildingId: document.getElementById('building-filter')?.value || '',
+        category: document.getElementById('category-filter')?.value || ''
     };
+    currentPage = 1;
     loadInventoryItems();
 }
 
 // Reset filters
 function resetFilters() {
-    document.getElementById('search-inventory').value = '';
-    document.getElementById('organization-filter').value = '';
-    document.getElementById('building-filter').value = '';
-    document.getElementById('category-filter').value = '';
+    const searchInput = document.getElementById('search-inventory');
+    const orgFilter = document.getElementById('organization-filter');
+    const buildingFilter = document.getElementById('building-filter');
+    const categoryFilter = document.getElementById('category-filter');
+    
+    if (searchInput) searchInput.value = '';
+    if (orgFilter) orgFilter.value = '';
+    if (buildingFilter) buildingFilter.value = '';
+    if (categoryFilter) categoryFilter.value = '';
+    
     currentFilters = {
         search: '',
         organizationId: '',
         buildingId: '',
         category: ''
     };
+    currentPage = 1;
     loadInventoryItems();
 }
 
@@ -250,15 +331,24 @@ function nextPage() {
 
 // Open add item modal
 function openAddItemModal() {
-    document.getElementById('modal-title').textContent = 'Yeni Əşya Əlavə Et';
+    const modal = document.getElementById('add-item-modal');
+    if (!modal) return;
+    
+    document.getElementById('modal-title').textContent = 'Yeni İnventar Elementi';
     document.getElementById('item-id').value = '';
     document.getElementById('inventory-number').value = '';
-    document.getElementById('location').value = '';
-    document.getElementById('status').value = '';
-    document.getElementById('room-id').value = '';
-    document.getElementById('responsible-person').value = '';
-    document.getElementById('category').value = '';
-    document.getElementById('add-item-modal').classList.add('active');
+    document.getElementById('item-location').value = '';
+    document.getElementById('item-status').value = '';
+    document.getElementById('item-category').value = '';
+    document.getElementById('item-responsible').value = '';
+    
+    // Load organization dropdown
+    const orgSelect = document.getElementById('item-organization');
+    if (orgSelect && orgSelect.options.length <= 1) {
+        loadOrganizations();
+    }
+    
+    modal.classList.add('active');
 }
 
 // Open edit item modal
@@ -269,39 +359,86 @@ async function openEditItemModal(id) {
         
         if (data.success) {
             const item = data.data;
-            document.getElementById('modal-title').textContent = 'Əşya Redaktə Et';
+            const modal = document.getElementById('add-item-modal');
+            if (!modal) return;
+            
+            document.getElementById('modal-title').textContent = 'İnventar Elementini Redaktə Et';
             document.getElementById('item-id').value = item.id;
             document.getElementById('inventory-number').value = item.inventory_number || '';
-            document.getElementById('location').value = item.location || '';
-            document.getElementById('status').value = item.status || '';
-            document.getElementById('room-id').value = item.room_id || '';
-            document.getElementById('responsible-person').value = item.responsible_person || '';
-            document.getElementById('category').value = item.category || '';
-            document.getElementById('add-item-modal').classList.add('active');
+            document.getElementById('item-location').value = item.location || '';
+            document.getElementById('item-status').value = item.status || '';
+            document.getElementById('item-category').value = item.category || '';
+            document.getElementById('item-responsible').value = item.responsible_person || '';
+            
+            // Load organization and set value
+            const orgSelect = document.getElementById('item-organization');
+            if (orgSelect && orgSelect.options.length <= 1) {
+                await loadOrganizations();
+            }
+            
+            // If we have room_id, we need to find the organization and building
+            if (item.room_id) {
+                // Load the room details to get building and organization
+                const roomResponse = await fetch(`/api/rooms/${item.room_id}`);
+                const roomData = await roomResponse.json();
+                
+                if (roomData.success && roomData.data) {
+                    const room = roomData.data;
+                    
+                    // Set organization
+                    if (room.organization_id) {
+                        const orgSelect = document.getElementById('item-organization');
+                        if (orgSelect) {
+                            orgSelect.value = room.organization_id;
+                            await loadBuildingsForItem(room.organization_id);
+                        }
+                    }
+                    
+                    // Set building
+                    if (room.building_id) {
+                        const buildingSelect = document.getElementById('item-building');
+                        if (buildingSelect) {
+                            buildingSelect.value = room.building_id;
+                            await loadRoomsForItem(room.building_id);
+                        }
+                    }
+                    
+                    // Set room
+                    const roomSelect = document.getElementById('item-room');
+                    if (roomSelect) {
+                        roomSelect.value = item.room_id;
+                    }
+                }
+            }
+            
+            modal.classList.add('active');
         }
     } catch (error) {
         console.error('Error loading item:', error);
-        showAlert('Əşya yüklənərkən xəta baş verdi', 'error');
+        showAlert('Element yüklənərkən xəta baş verdi', 'error');
     }
 }
 
 // Close item modal
-function closeItemModal() {
-    document.getElementById('add-item-modal').classList.remove('active');
+function closeAddItemModal() {
+    const modal = document.getElementById('add-item-modal');
+    if (modal) {
+        modal.classList.remove('active');
+    }
 }
 
 // Save item
 async function saveItem() {
-    const id = document.getElementById('item-id').value;
-    const inventoryNumber = document.getElementById('inventory-number').value;
-    const location = document.getElementById('location').value;
-    const status = document.getElementById('status').value;
-    const roomId = document.getElementById('room-id').value;
-    const responsiblePerson = document.getElementById('responsible-person').value;
-    const category = document.getElementById('category').value;
+    const id = document.getElementById('item-id')?.value || '';
+    const inventoryNumber = document.getElementById('inventory-number')?.value?.trim() || '';
+    const location = document.getElementById('item-location')?.value?.trim() || '';
+    const status = document.getElementById('item-status')?.value || '';
+    const roomId = document.getElementById('item-room')?.value || '';
+    const responsiblePerson = document.getElementById('item-responsible')?.value?.trim() || '';
+    const category = document.getElementById('item-category')?.value || '';
     
-    if (!inventoryNumber || !status || !roomId) {
-        showAlert('İnventar nömrəsi, status və otaq mütləq doldurulmalıdır', 'error');
+    if (!inventoryNumber || !roomId) {
+        showAlert('İnventar nömrəsi və otaq mütləq doldurulmalıdır', 'error');
         return;
     }
     
@@ -337,33 +474,42 @@ async function saveItem() {
         const result = await response.json();
         
         if (result.success) {
-            closeItemModal();
+            closeAddItemModal();
             loadInventoryItems();
-            showAlert(id ? 'Əşya uğurla redaktə edildi' : 'Əşya uğurla əlavə edildi', 'success');
+            showAlert(id ? 'Element uğurla redaktə edildi' : 'Element uğurla əlavə edildi', 'success');
         } else {
             showAlert(result.error || 'Xəta baş verdi', 'error');
         }
     } catch (error) {
         console.error('Error saving item:', error);
-        showAlert('Əşya yadda saxlanarkən xəta baş verdi', 'error');
+        showAlert('Elementi yadda saxlayarkən xəta baş verdi', 'error');
     }
 }
 
 // Confirm delete item
 function confirmDeleteItem(id, inventoryNumber) {
+    const modal = document.getElementById('delete-modal');
+    if (!modal) return;
+    
     document.getElementById('delete-item-info').textContent = `İnventar nömrəsi: ${inventoryNumber}`;
-    document.getElementById('delete-modal').dataset.itemId = id;
-    document.getElementById('delete-modal').classList.add('active');
+    modal.dataset.itemId = id;
+    modal.classList.add('active');
 }
 
 // Close delete modal
 function closeDeleteModal() {
-    document.getElementById('delete-modal').classList.remove('active');
+    const modal = document.getElementById('delete-modal');
+    if (modal) {
+        modal.classList.remove('active');
+    }
 }
 
 // Confirm delete
 async function confirmDelete() {
-    const id = document.getElementById('delete-modal').dataset.itemId;
+    const modal = document.getElementById('delete-modal');
+    if (!modal) return;
+    
+    const id = modal.dataset.itemId;
     
     try {
         const response = await fetch(`/api/inventory-items/${id}`, {
@@ -375,26 +521,32 @@ async function confirmDelete() {
         if (result.success) {
             closeDeleteModal();
             loadInventoryItems();
-            showAlert('Əşya uğurla silindi', 'success');
+            showAlert('Element uğurla silindi', 'success');
         } else {
             showAlert(result.error || 'Xəta baş verdi', 'error');
         }
     } catch (error) {
         console.error('Error deleting item:', error);
-        showAlert('Əşya silinərkən xəta baş verdi', 'error');
+        showAlert('Elementi silinərkən xəta baş verdi', 'error');
     }
 }
 
 // Open import modal
 function openImportModal() {
+    const modal = document.getElementById('import-modal');
+    if (!modal) return;
+    
     document.getElementById('excel-file').value = '';
     document.getElementById('import-preview').style.display = 'none';
-    document.getElementById('import-modal').classList.add('active');
+    modal.classList.add('active');
 }
 
 // Close import modal
 function closeImportModal() {
-    document.getElementById('import-modal').classList.remove('active');
+    const modal = document.getElementById('import-modal');
+    if (modal) {
+        modal.classList.remove('active');
+    }
 }
 
 // Preview Excel file
@@ -407,8 +559,12 @@ async function previewExcel(file) {
         
         // Note: Preview would require server-side parsing
         // For now, just show file name
-        document.getElementById('import-preview').style.display = 'block';
-        document.getElementById('preview-table').innerHTML = `<p>Fayl: ${file.name}</p>`;
+        const preview = document.getElementById('import-preview');
+        const previewTable = document.getElementById('preview-table');
+        if (preview && previewTable) {
+            preview.style.display = 'block';
+            previewTable.innerHTML = `<p>Fayl: ${escapeHtml(file.name)}</p>`;
+        }
     } catch (error) {
         console.error('Error previewing Excel:', error);
     }
@@ -417,7 +573,7 @@ async function previewExcel(file) {
 // Import Excel
 async function importExcel() {
     const fileInput = document.getElementById('excel-file');
-    const file = fileInput.files[0];
+    const file = fileInput?.files[0];
     
     if (!file) {
         showAlert('Zəhmət olmasa, fayl seçin', 'error');
@@ -460,29 +616,38 @@ async function fetchCurrentUser() {
         const data = await response.json();
         
         if (data.success && data.data) {
-            document.getElementById('current-user').textContent = data.data.username;
-            const roleBadge = document.getElementById('user-role');
-            roleBadge.textContent = data.data.role;
-            roleBadge.className = `badge badge-${data.data.role === 'admin' ? 'info' : 'success'}`;
+            const userSpan = document.getElementById('current-user');
+            const roleSpan = document.getElementById('user-role');
+            
+            if (userSpan) {
+                userSpan.textContent = data.data.username;
+            }
+            if (roleSpan) {
+                roleSpan.textContent = data.data.role === 'admin' ? 'Admin' : 'İstifadəçi';
+                roleSpan.className = `badge badge-${data.data.role === 'admin' ? 'info' : 'success'}`;
+            }
         }
     } catch (error) {
         console.error('Error fetching current user:', error);
     }
 }
 
-// Logout function
-function logout() {
-    fetch('/api/auth/logout', {
-        method: 'POST',
-        credentials: 'include'
-    }).then(response => response.json())
-      .then(data => {
-          if (data.success) {
-              window.location.href = '/';
-          }
-      })
-      .catch(error => {
-          console.error('Error logging out:', error);
-          window.location.href = '/';
-      });
+// Helper functions
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
+
+function showAlert(message, type = 'info') {
+    // Simple alert for now - can be replaced with toast notifications
+    alert(message);
+}
+
+// Close modals on outside click
+window.onclick = function(event) {
+    if (event.target.classList.contains('modal')) {
+        event.target.classList.remove('active');
+    }
+};

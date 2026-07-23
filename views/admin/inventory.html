@@ -123,7 +123,7 @@
                             <option value="mebel">Mebel</option>
                             <option value="kompüter">Kompüter avadanlığı</option>
                             <option value="ofis">Ofis avadanlığı</option>
-                            <option value="digər">Digər</option>
+                            <option value="diger">Diger</option>
                         </select>
                     </div>
                     <button type="button" class="btn btn-primary" onclick="loadInventory()">
@@ -144,12 +144,13 @@
                                     <th>Status</th>
                                     <th>Kateqoriya</th>
                                     <th>Məsul Şəxs</th>
+                                    <th>Otaq</th>
                                     <th>Əməliyyatlar</th>
                                 </tr>
                             </thead>
                             <tbody id="inventory-table-body">
                                 <tr>
-                                    <td colspan="6" class="text-center">Yüklənir...</td>
+                                    <td colspan="7" class="text-center">Yüklənir...</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -161,53 +162,81 @@
 
     <!-- Add Item Modal -->
     <div class="modal" id="add-item-modal">
-        <div class="modal-content">
+        <div class="modal-content modal-lg">
             <div class="modal-header">
-                <h3>Yeni İnventar Elementi</h3>
+                <h3 id="modal-title">Yeni İnventar Elementi</h3>
                 <button class="modal-close" onclick="closeAddItemModal()">&times;</button>
             </div>
             <div class="modal-body">
                 <form id="add-item-form">
-                    <div class="form-group">
-                        <label for="item-number">İnventar Nömrəsi</label>
-                        <div class="input-wrapper">
-                            <i class="fas fa-hashtag"></i>
-                            <input type="text" id="item-number" required>
+                    <input type="hidden" id="item-id">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="inventory-number">İnventar Nömrəsi *</label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-hashtag"></i>
+                                <input type="text" id="inventory-number" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="item-location">Yerləşdə</label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-map-marker-alt"></i>
+                                <input type="text" id="item-location">
+                            </div>
                         </div>
                     </div>
-                    <div class="form-group">
-                        <label for="item-location">Yerləşdə</label>
-                        <div class="input-wrapper">
-                            <i class="fas fa-map-marker-alt"></i>
-                            <input type="text" id="item-location" required>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="item-organization">Təşkilat *</label>
+                            <select id="item-organization" required onchange="loadBuildingsForItem(this.value)">
+                                <option value="">Seçin</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="item-building">Bina *</label>
+                            <select id="item-building" required onchange="loadRoomsForItem(this.value)">
+                                <option value="">Seçin</option>
+                            </select>
                         </div>
                     </div>
+                    
+                    <div class="form-group">
+                        <label for="item-room">Otaq *</label>
+                        <select id="item-room" required>
+                            <option value="">Seçin</option>
+                        </select>
+                    </div>
+                    
                     <div class="form-row">
                         <div class="form-group">
                             <label for="item-status">Status</label>
-                            <select id="item-status" required>
+                            <select id="item-status">
                                 <option value="">Seçin</option>
                                 <option value="active">Aktiv</option>
                                 <option value="inactive">Qeyri-aktiv</option>
                                 <option value="maintenance">Təmirdə</option>
+                                <option value="lost">İtkin</option>
                             </select>
                         </div>
                         <div class="form-group">
                             <label for="item-category">Kateqoriya</label>
-                            <select id="item-category" required>
+                            <select id="item-category">
                                 <option value="">Seçin</option>
                                 <option value="mebel">Mebel</option>
                                 <option value="kompüter">Kompüter avadanlığı</option>
                                 <option value="ofis">Ofis avadanlığı</option>
-                                <option value="digər">Digər</option>
+                                <option value="diger">Diger</option>
                             </select>
                         </div>
                     </div>
+                    
                     <div class="form-group">
                         <label for="item-responsible">Məsul Şəxs</label>
                         <div class="input-wrapper">
                             <i class="fas fa-user"></i>
-                            <input type="text" id="item-responsible" required>
+                            <input type="text" id="item-responsible">
                         </div>
                     </div>
                 </form>
@@ -218,6 +247,27 @@
                 </button>
                 <button type="button" class="btn btn-primary" onclick="saveItem()">
                     <i class="fas fa-save"></i> Yadda saxla
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal" id="delete-modal">
+        <div class="modal-content modal-sm">
+            <div class="modal-header">
+                <h3>Elementi Sil</h3>
+                <button class="modal-close" onclick="closeDeleteModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="delete-item-info">Bu elementi silmək istədiyinizə əminsiniz?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeDeleteModal()">
+                    Ləğv et
+                </button>
+                <button type="button" class="btn btn-danger" onclick="confirmDelete()">
+                    <i class="fas fa-trash"></i> Sil
                 </button>
             </div>
         </div>
@@ -235,8 +285,12 @@
                     <label for="excel-file">Excel Faylı (XLSX)</label>
                     <input type="file" id="excel-file" accept=".xlsx, .xls" required>
                 </div>
+                <div id="import-preview" style="display: none; margin-top: 1rem;">
+                    <h4>Ön izləmə</h4>
+                    <div id="preview-table"></div>
+                </div>
                 <p style="color: var(--text-light); font-size: 0.9rem; margin-top: 1rem;">
-                    <i class="fas fa-info-circle"></i> Fayl formatı: İnventar nömrəsi, Yerləşdə, Status, Kateqoriya, Məsul şəxs
+                    <i class="fas fa-info-circle"></i> Fayl formatı: İnventar nömrəsi, Yerləşdə, Status, Kateqoriya, Məsul şəxs, Otaq ID
                 </p>
             </div>
             <div class="modal-footer">
@@ -289,7 +343,14 @@
             document.getElementById('import-modal').classList.remove('active');
         }
         
-
+        function openDeleteModal() {
+            document.getElementById('delete-modal').classList.add('active');
+        }
+        
+        function closeDeleteModal() {
+            document.getElementById('delete-modal').classList.remove('active');
+        }
+        
         // Import Excel function
         function importExcel() {
             if (typeof importExcelFile === 'function') {

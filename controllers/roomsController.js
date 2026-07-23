@@ -40,7 +40,7 @@ class RoomsController {
     static async getById(req, res) {
         try {
             const { id } = req.params;
-            const room = await Room.getById(id);
+            const room = await Room.getByIdWithDetails(id);
             
             if (!room) {
                 return res.status(404).json({
@@ -49,21 +49,10 @@ class RoomsController {
                 });
             }
             
-            // Get room with details
-            const rooms = await Room.getFiltered({});
-            const roomWithDetails = rooms.find(r => r.id === id);
-            
-            if (roomWithDetails) {
-                res.json({
-                    success: true,
-                    data: roomWithDetails
-                });
-            } else {
-                res.json({
-                    success: true,
-                    data: room
-                });
-            }
+            res.json({
+                success: true,
+                data: room
+            });
         } catch (error) {
             console.error('Error fetching room:', error);
             res.status(500).json({
@@ -76,7 +65,27 @@ class RoomsController {
     static async getItemsByRoom(req, res) {
         try {
             const { id } = req.params;
-            const items = await InventoryItem.getByRoom(id);
+            const { search, status, category } = req.query;
+            
+            let items = await InventoryItem.getByRoom(id);
+            
+            // Apply filters if provided
+            if (search) {
+                items = items.filter(item => 
+                    (item.inventory_number && item.inventory_number.toLowerCase().includes(search.toLowerCase())) ||
+                    (item.location && item.location.toLowerCase().includes(search.toLowerCase())) ||
+                    (item.responsible_person && item.responsible_person.toLowerCase().includes(search.toLowerCase())) ||
+                    (item.category && item.category.toLowerCase().includes(search.toLowerCase()))
+                );
+            }
+            
+            if (status) {
+                items = items.filter(item => item.status === status);
+            }
+            
+            if (category) {
+                items = items.filter(item => item.category === category);
+            }
             
             res.json({
                 success: true,

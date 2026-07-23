@@ -12,6 +12,21 @@ class Room {
         return result.rows[0];
     }
 
+    static async getByIdWithDetails(id) {
+        const result = await query(`
+            SELECT r.*, 
+                   b.id as building_id, 
+                   b.name as building_name,
+                   o.id as organization_id,
+                   o.name as organization_name
+            FROM rooms r
+            JOIN buildings b ON r.building_id = b.id
+            JOIN organizations o ON b.organization_id = o.id
+            WHERE r.id = $1
+        `, [id]);
+        return result.rows[0];
+    }
+
     static async getByBuilding(buildingId) {
         const result = await query(
             'SELECT * FROM rooms WHERE building_id = $1 ORDER BY name ASC',
