@@ -11,6 +11,27 @@ const upload = multer({ storage });
 class InventoryItemsController {
     static async getAll(req, res) {
         try {
+            const { search, organizationId, buildingId, roomId, category, status, page = 1, limit = 20 } = req.query;
+            
+            // If filters are provided, use filter method
+            if (search || organizationId || buildingId || roomId || category || status || page > 1 || limit !== 20) {
+                const result = await InventoryItem.filter({
+                    organizationId,
+                    buildingId,
+                    roomId,
+                    category,
+                    status,
+                    search,
+                    page: parseInt(page, 10),
+                    limit: parseInt(limit, 10)
+                });
+                
+                return res.json({
+                    success: true,
+                    ...result
+                });
+            }
+            
             const items = await InventoryItem.getWithDetails();
             res.json({
                 success: true,
@@ -53,11 +74,21 @@ class InventoryItemsController {
     static async getByRoom(req, res) {
         try {
             const { roomId } = req.params;
-            const items = await InventoryItem.getByRoom(roomId);
+            const { search, category, status, page = 1, limit = 10 } = req.query;
+            
+            // Use filter method with roomId
+            const result = await InventoryItem.filter({
+                roomId,
+                category,
+                status,
+                search,
+                page: parseInt(page, 10),
+                limit: parseInt(limit, 10)
+            });
             
             res.json({
                 success: true,
-                data: items
+                ...result
             });
         } catch (error) {
             console.error('Error fetching inventory items by room:', error);
@@ -350,49 +381,44 @@ class InventoryItemsController {
                 });
             }
             
-            // Parse Excel file
-            const items = parseExcelBuffer(req.file.buffer);
+            const { roomId } = req.body;
             
-            if (items.length === 0) {
-                return res.status(400).json({
-                    success: false,
-                    error: 'No valid items found in the Excel file'
-                });
-            }
+            // Parse Excel file
+            const items = await parseExcelBuffer(req.file.buffer);
             
             // Validate items
-            const { validItems, invalidItems } = validateItems(items);
-            
-            if (validItems.length === 0) {
+            const validation = validateItems(items);
+            if (!validation.valid) {
                 return res.status(400).json({
                     success: false,
-                    error: 'No valid items to import',
-                    invalidItems
+                    error: validation.errors.join(', ')
                 });
             }
             
-            // Import valid items
-            const createdItems = await InventoryItem.bulkCreate(validItems);
+            // Set room_id for all items
+            const itemsWithRoom = items.map(item => ({
+                ...item,
+                room_id: roomId
+            }));
+            
+            // Bulk create items
+            const createdItems = await InventoryItem.bulkCreate(itemsWithRoom);
             
             // Log import
             await HistoryLog.create({
                 action_type: 'import',
+                room_id: roomId,
                 responsible_person: req.user?.username || 'system',
-                new_values: {
-                    total: items.length,
-                    valid: validItems.length,
-                    invalid: invalidItems.length
-                }
+                new_values: { count: createdItems.length, filename: req.file.originalname }
             });
             
             res.status(201).json({
                 success: true,
                 data: createdItems,
-                message: `${createdItems.length} items imported successfully`,
-                invalidItems: invalidItems.length > 0 ? invalidItems : undefined
+                message: `${createdItems.length} items imported successfully`
             });
         } catch (error) {
-            console.error('Error importing Excel file:', error);
+            console.error('Error importing Excel:', error);
             res.status(500).json({
                 success: false,
                 error: 'Server error'

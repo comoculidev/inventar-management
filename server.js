@@ -50,6 +50,11 @@ app.get('/admin/rooms', verifyAuth, verifyAdmin, (req, res) => {
     res.sendFile(path.join(__dirname, 'views', 'admin', 'rooms.html'));
 });
 
+// Room detail route - shows items in a specific room
+app.get('/admin/rooms/:id/items', verifyAuth, verifyAdmin, (req, res) => {
+    res.sendFile(path.join(__dirname, 'views', 'admin', 'room-detail.html'));
+});
+
 // API Routes
 app.use('/api/organizations', verifyAuth, require('./routes/organizations'));
 app.use('/api/buildings', verifyAuth, require('./routes/buildings'));

@@ -1,12 +1,16 @@
 const express = require('express');
 const router = express.Router();
 const RoomsController = require('../controllers/roomsController');
+const InventoryItemsController = require('../controllers/inventoryItemsController');
 
 // GET /api/rooms - List all rooms
 router.get('/', RoomsController.getAll);
 
 // GET /api/rooms/:id - Get single room
 router.get('/:id', RoomsController.getById);
+
+// GET /api/rooms/:id/items - Get items in a specific room
+router.get('/:id/items', InventoryItemsController.getByRoom);
 
 // GET /api/rooms/building/:buildingId - Get rooms by building
 router.get('/building/:buildingId', RoomsController.getByBuilding);

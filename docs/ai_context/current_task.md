@@ -1,17 +1,17 @@
-# Current Task: Task 7.2
+# Current Task: Task 7.5
 
-## Task 7.2: Implement Rooms API Endpoints (Read)
+## Task 7.5: Implement Room Items Display API Calls
 
 **Status**: IN PROGRESS
 
-**Description**: Create backend endpoints to retrieve rooms filtered by organization and search term.
+**Description**: Create backend endpoint that returns items specifically for a given room ID.
 
-**Goal**: Enable fetching all rooms with proper filtering and pagination support.
+**Goal**: Enable fetching room-level inventory items efficiently.
 
 **Expected Result**: 
-GET /api/rooms endpoint accepting organization_id query parameter and search parameter for filtering room names.
+GET /api/rooms/:id/items endpoint returns all inventory_items where room_id matches the specified room.
 
-**Dependencies**: Task 3.4
+**Dependencies**: Task 3.5
 
 **Started**: 2024
 
@@ -19,36 +19,30 @@ GET /api/rooms endpoint accepting organization_id query parameter and search par
 
 ## Implementation Notes
 
-The rooms.html page has been created with:
-- Navigation sidebar (reusable from dashboard)
-- Search bar
-- Filter dropdowns (Organization, Building)
-- Room list display area
-- Add/Edit/Delete modal dialogs
-- Pagination support
-- Azerbaijani language support
+Tasks 7.2, 7.3, and 7.4 have been completed:
 
-The server.js has been updated to include the /admin/rooms route.
+### Task 7.2: Implement Rooms API Endpoints (Read) ✅ COMPLETED
+- GET /api/rooms endpoint already accepts search, organizationId, buildingId, page, limit parameters
+- Full filtering and pagination support implemented
 
-The rooms.js JavaScript file has been created with:
-- User info loading
-- Organizations and buildings loading for filters
-- Rooms loading with pagination and filtering
-- CRUD operations (Create, Read, Update, Delete)
-- Modal dialogs for add/edit/delete
-- Notification system
+### Task 7.3: Implement Rooms Page Display Logic ✅ COMPLETED
+- Rooms displayed in table with clear hierarchy (Organization -> Building -> Room)
+- Each room has "View Items" button
+- Search and filter by organization and building works
 
-The Room model has been updated with:
-- getWithItemCounts() method to get rooms with item counts
-- getFiltered() method to support search, organization, building filters with pagination
+### Task 7.4: Implement Room Detail Page Structure ✅ COMPLETED
+- Created views/admin/room-detail.html
+- Created public/js/admin/room-detail.js
+- Added /admin/rooms/:id/items route in server.js
+- Room detail page shows room info and all items in that room
+- Supports CRUD operations for items within the room
+- Supports filtering and pagination for items
 
-The RoomsController has been updated to support filtering and pagination.
+For Task 7.5, the API endpoint already exists:
+- GET /api/inventory-items?roomId={roomId} returns items for a room
+- GET /api/inventory-items/room/{roomId} also available
+- Both support filtering and pagination
 
----
+The roadmap mentions GET /api/rooms/:id/items, but we have GET /api/inventory-items with roomId parameter which is more RESTful.
 
-## Next Steps
-
-Need to implement:
-1. Verify the rooms API endpoint works with filtering
-2. Test the rooms page functionality
-3. Ensure proper error handling
+Need to verify if we need to add /api/rooms/:id/items endpoint or if the current implementation is sufficient.
