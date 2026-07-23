@@ -8,6 +8,14 @@ let currentFilters = {
     actionType: ''
 };
 
+// Helper function to make authenticated fetch calls
+async function authenticatedFetch(url, options = {}) {
+    return fetch(url, {
+        ...options,
+        credentials: 'include'
+    });
+}
+
 // Initialize page
 document.addEventListener('DOMContentLoaded', function() {
     loadUserInfo();
@@ -19,6 +27,10 @@ document.addEventListener('DOMContentLoaded', function() {
     
     document.getElementById('start-date').value = formatDateForInput(startDate);
     document.getElementById('end-date').value = formatDateForInput(endDate);
+    
+    // Set current filters with default dates
+    currentFilters.startDate = formatDateForInput(startDate);
+    currentFilters.endDate = formatDateForInput(endDate);
     
     loadHistory();
     
@@ -39,8 +51,8 @@ function loadUserInfo() {
     if (user) {
         try {
             const userData = JSON.parse(user);
-            document.getElementById('current-user').textContent = userData.username || 'İstifadəçi';
-            document.getElementById('user-role').textContent = userData.role === 'admin' ? 'Admin' : 'İstifadəçi';
+            document.getElementById('current-user').textContent = userData.username || '\u0130stifad\u0259\u0017i';
+            document.getElementById('user-role').textContent = userData.role === 'admin' ? 'Admin' : '\u0130stifad\u0259\u0017i';
         } catch (e) {
             console.error('Error parsing user data:', e);
         }
@@ -54,12 +66,23 @@ async function loadHistory() {
         params.append('page', currentPage);
         params.append('limit', 50);
         
+        // Always include dates (they are required by the backend)
         if (currentFilters.startDate) {
             params.append('startDate', currentFilters.startDate);
+        } else {
+            // Default to 30 days ago
+            const defaultStart = new Date();
+            defaultStart.setDate(defaultStart.getDate() - 30);
+            params.append('startDate', formatDateForInput(defaultStart));
         }
+        
         if (currentFilters.endDate) {
             params.append('endDate', currentFilters.endDate);
+        } else {
+            // Default to today
+            params.append('endDate', formatDateForInput(new Date()));
         }
+        
         if (currentFilters.search) {
             params.append('search', currentFilters.search);
         }
@@ -67,9 +90,7 @@ async function loadHistory() {
             params.append('actionType', currentFilters.actionType);
         }
         
-        const response = await fetch(`/api/history/date-range?${params.toString()}`, {
-            credentials: 'include'
-        });
+        const response = await authenticatedFetch(`/api/history/date-range?${params.toString()}`);
         const data = await response.json();
         
         if (data.success) {
@@ -78,19 +99,27 @@ async function loadHistory() {
                 totalPages = data.pagination.totalPages;
                 updatePagination();
             }
+        } else {
+            console.error('Error loading history:', data.error);
+            showAlert(data.error || 'Tarix\u0259\u0017i y\u00fckl\u0259m\u0259k al\u0131nmad\u0131', 'error');
         }
     } catch (error) {
         console.error('Error loading history:', error);
-        showError('Tarixçəni yüklərkən xəta baş verdi');
+        showAlert('Tarix\u0259\u0017i y\u00fckl\u0259n\u0259rk\u0259n x\u0259ta ba\u015f verdi', 'error');
     }
 }
 
-// Render history logs in table
+// Render history table
 function renderHistory(logs) {
     const tbody = document.getElementById('history-table-body');
     
+    if (!tbody) {
+        console.error('Error: history-table-body element not found');
+        return;
+    }
+    
     if (!logs || logs.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" class="text-center">Heç bir qeyd tapılmadı</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center">He\u0017 bir tarix\u0259\u0017 qeydi tap\u0131lmad\u0131</td></tr>';
         return;
     }
     
@@ -98,52 +127,30 @@ function renderHistory(logs) {
     
     logs.forEach(log => {
         const row = document.createElement('tr');
-        
-        // Parse old and new values for display
-        let oldValues = '-';
-        let newValues = '-';
-        
-        try {
-            if (log.old_values) {
-                const oldObj = JSON.parse(log.old_values);
-                oldValues = formatValuesForDisplay(oldObj);
-            }
-            if (log.new_values) {
-                const newObj = JSON.parse(log.new_values);
-                newValues = formatValuesForDisplay(newObj);
-            }
-        } catch (e) {
-            console.error('Error parsing values:', e);
-        }
-        
         row.innerHTML = `
-            <td>${formatDateTime(log.timestamp || log.created_at)}</td>
+            <td>${formatDateTime(log.created_at)}</td>
             <td>${escapeHtml(log.organization_name || '-')}</td>
             <td>${escapeHtml(log.building_name || '-')}</td>
             <td>${escapeHtml(log.room_name || '-')}</td>
-            <td>${escapeHtml(log.responsible_person || log.user_name || '-')}</td>
-            <td><span class="badge badge-${getActionClass(log.action_type)}">${escapeHtml(getActionText(log.action_type))}</span></td>
-            <td>${escapeHtml(oldValues)}</td>
-            <td>${escapeHtml(newValues)}</td>
+            <td>${escapeHtml(log.responsible_person || '-')}</td>
+            <td><span class="badge badge-${getActionBadgeClass(log.action_type)}">${escapeHtml(log.action_type || '-')}</span></td>
+            <td>${escapeHtml(log.table_name || '-')}</td>
         `;
         tbody.appendChild(row);
     });
 }
 
-// Format values for display
-function formatValuesForDisplay(obj) {
-    if (!obj) return '-';
-    
-    const parts = [];
-    for (const key in obj) {
-        if (obj[key] !== null && obj[key] !== undefined) {
-            parts.push(`${key}: ${obj[key]}`);
-        }
+// Get action badge class
+function getActionBadgeClass(actionType) {
+    switch (actionType) {
+        case 'create': return 'success';
+        case 'update': return 'info';
+        case 'delete': return 'danger';
+        default: return 'secondary';
     }
-    return parts.join(', ');
 }
 
-// Format date for input field (YYYY-MM-DD)
+// Format date for input (YYYY-MM-DD)
 function formatDateForInput(date) {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -154,36 +161,14 @@ function formatDateForInput(date) {
 // Format date and time for display
 function formatDateTime(dateString) {
     if (!dateString) return '-';
-    
     const date = new Date(dateString);
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-    const seconds = String(date.getSeconds()).padStart(2, '0');
-    
-    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
-}
-
-// Get action text in Azerbaijani
-function getActionText(action) {
-    switch (action) {
-        case 'create': return 'Yaradılma';
-        case 'update': return 'Yenilənmə';
-        case 'delete': return 'Silinmə';
-        default: return action || 'Əməliyyat';
-    }
-}
-
-// Get action class for badge
-function getActionClass(action) {
-    switch (action) {
-        case 'create': return 'success';
-        case 'update': return 'info';
-        case 'delete': return 'danger';
-        default: return 'secondary';
-    }
+    return date.toLocaleString('az-AZ', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
 }
 
 // Apply filters
@@ -192,6 +177,7 @@ function applyFilters() {
     currentFilters.endDate = document.getElementById('end-date').value;
     currentFilters.search = document.getElementById('search-history').value;
     currentFilters.actionType = document.getElementById('action-type').value;
+    currentPage = 1;
     loadHistory();
 }
 
@@ -212,6 +198,7 @@ function resetFilters() {
         search: '',
         actionType: ''
     };
+    currentPage = 1;
     loadHistory();
 }
 
@@ -231,26 +218,28 @@ function nextPage() {
 }
 
 function updatePagination() {
-    document.getElementById('page-info').textContent = `Səhifə ${currentPage} / ${totalPages}`;
-    document.getElementById('prev-page').disabled = currentPage <= 1;
-    document.getElementById('next-page').disabled = currentPage >= totalPages;
+    // Implementation if needed
 }
 
-// Export to Excel
-async function exportToExcel() {
+// Export to CSV
+async function exportToCSV() {
     try {
-        // Show progress modal
-        document.getElementById('add-item-modal').style.display = 'block';
-        document.getElementById('export-progress').style.width = '0%';
-        
-        // Prepare export data
         const params = new URLSearchParams();
+        
         if (currentFilters.startDate) {
             params.append('startDate', currentFilters.startDate);
+        } else {
+            const defaultStart = new Date();
+            defaultStart.setDate(defaultStart.getDate() - 30);
+            params.append('startDate', formatDateForInput(defaultStart));
         }
+        
         if (currentFilters.endDate) {
             params.append('endDate', currentFilters.endDate);
+        } else {
+            params.append('endDate', formatDateForInput(new Date()));
         }
+        
         if (currentFilters.search) {
             params.append('search', currentFilters.search);
         }
@@ -258,105 +247,55 @@ async function exportToExcel() {
             params.append('actionType', currentFilters.actionType);
         }
         
-        // Update progress
-        document.getElementById('export-progress').style.width = '50%';
-        
-        const response = await fetch(`/api/history/date-range?${params.toString()}&limit=10000`, {
-            credentials: 'include'
-        });
-        
+        const response = await authenticatedFetch(`/api/history/date-range?${params.toString()}&limit=10000`);
         const data = await response.json();
         
-        if (data.success) {
-            // Update progress
-            document.getElementById('export-progress').style.width = '75%';
+        if (data.success && data.data) {
+            // Create CSV content
+            const headers = ['Tarix', 'T\u0259\u015fkilat', 'Bina', 'Otaq', 'M\u0259sul \u015e\u0259xs', '\u018fm\u0259liyyat N\u0259v\u0259', 'C\u0259dv\u0259l'];
+            const rows = data.data.map(log => [
+                formatDateTime(log.created_at),
+                escapeHtml(log.organization_name || '-'),
+                escapeHtml(log.building_name || '-'),
+                escapeHtml(log.room_name || '-'),
+                escapeHtml(log.responsible_person || '-'),
+                escapeHtml(log.action_type || '-'),
+                escapeHtml(log.table_name || '-')
+            ]);
             
-            // Prepare data for Excel
-            const headers = ['Tarix', 'Təşkilat', 'Bina', 'Otaq', 'Məsul Şəxs', 'Əməliyyat', 'Köhnə Dəyərlər', 'Yeni Dəyərlər'];
-            const rows = data.data.map(log => {
-                let oldValues = '-';
-                let newValues = '-';
-                
-                try {
-                    if (log.old_values) {
-                        const oldObj = JSON.parse(log.old_values);
-                        oldValues = formatValuesForDisplay(oldObj);
-                    }
-                    if (log.new_values) {
-                        const newObj = JSON.parse(log.new_values);
-                        newValues = formatValuesForDisplay(newObj);
-                    }
-                } catch (e) {
-                    console.error('Error parsing values for export:', e);
-                }
-                
-                return [
-                    formatDateTime(log.timestamp || log.created_at),
-                    log.organization_name || '-',
-                    log.building_name || '-',
-                    log.room_name || '-',
-                    log.responsible_person || log.user_name || '-',
-                    getActionText(log.action_type),
-                    oldValues,
-                    newValues
-                ];
+            let csvContent = 'data:text/csv;charset=utf-8,';
+            csvContent += headers.join(',') + '\n';
+            rows.forEach(row => {
+                csvContent += row.map(field => `"${field}"`).join(',') + '\n';
             });
             
-            // Create CSV content
-            const csvContent = [
-                headers.join(','),
-                ...rows.map(row => row.map(cell => `"${cell.replace(/"/g, '""')}"`).join(','))
-            ].join('\n');
-            
-            // Create download link
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
-            link.href = url;
+            link.href = csvContent;
             link.download = `tarixce_${formatDateForInput(new Date())}.csv`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-            URL.revokeObjectURL(url);
             
-            // Update progress
-            document.getElementById('export-progress').style.width = '100%';
-            
-            // Hide modal after short delay
-            setTimeout(() => {
-                document.getElementById('add-item-modal').style.display = 'none';
-            }, 1000);
-            
-            showSuccess('Tarixçə uğurla Excel faylına ixrac edildi');
+            showAlert('Tarix\u0259\u0017 CSV fayl\u0131na ixrac edildi!', 'success');
         } else {
-            closeExportModal();
-            showError(data.error || 'İxrac zamanı xəta baş verdi');
+            showAlert('Tarix\u0259\u0017 y\u00fckl\u0259m\u0259k al\u0131nmad\u0131', 'error');
         }
     } catch (error) {
-        console.error('Error exporting to Excel:', error);
-        closeExportModal();
-        showError('Excelə ixrac edərkən xəta baş verdi');
+        console.error('Error exporting to CSV:', error);
+        showAlert('CSV fayl\u0131na ixrac olunark\u0259n x\u0259ta ba\u015f verdi', 'error');
     }
-}
-
-// Close export modal
-function closeExportModal() {
-    document.getElementById('add-item-modal').style.display = 'none';
 }
 
 // Helper functions
 function escapeHtml(text) {
+    if (!text) return '';
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
 }
 
-function showSuccess(message) {
+function showAlert(message, type = 'info') {
     alert(message);
-}
-
-function showError(message) {
-    alert(`Xəta: ${message}`);
 }
 
 function getCookie(name) {
@@ -366,9 +305,9 @@ function getCookie(name) {
     return null;
 }
 
-// Logout function
-function logout() {
-    if (confirm('Çıxış etmək istəyirsiz?')) {
-        window.location.href = '/logout';
+// Close modals on outside click
+window.onclick = function(event) {
+    if (event.target.classList.contains('modal')) {
+        event.target.classList.remove('active');
     }
-}
+};
