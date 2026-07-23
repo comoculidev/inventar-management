@@ -1,6 +1,4 @@
 // Rooms Management JavaScript
-let currentPage = 1;
-let totalPages = 1;
 let currentFilters = {
     search: '',
     organizationId: '',
@@ -122,7 +120,6 @@ async function loadBuildingsForModal() {
 async function loadRooms() {
     try {
         const params = new URLSearchParams();
-        params.append('page', currentPage);
         
         const searchInput = document.getElementById('search-rooms');
         const orgFilter = document.getElementById('organization-room-filter');
@@ -145,11 +142,6 @@ async function loadRooms() {
         
         if (data.success) {
             renderRooms(data.data);
-            // Update pagination if available
-            if (data.pagination) {
-                totalPages = data.pagination.totalPages;
-                updatePagination();
-            }
         }
     } catch (error) {
         console.error('Error loading rooms:', error);
@@ -204,7 +196,6 @@ function applyFilters() {
     if (orgFilter) currentFilters.organizationId = orgFilter.value;
     if (buildingFilter) currentFilters.buildingId = buildingFilter.value;
     
-    currentPage = 1;
     loadRooms();
 }
 
@@ -223,39 +214,7 @@ function resetFilters() {
         organizationId: '',
         buildingId: ''
     };
-    currentPage = 1;
     loadRooms();
-}
-
-// Pagination functions
-function previousPage() {
-    if (currentPage > 1) {
-        currentPage--;
-        loadRooms();
-    }
-}
-
-function nextPage() {
-    if (currentPage < totalPages) {
-        currentPage++;
-        loadRooms();
-    }
-}
-
-function updatePagination() {
-    const pageInfo = document.getElementById('page-info');
-    const prevBtn = document.getElementById('prev-page');
-    const nextBtn = document.getElementById('next-page');
-    
-    if (pageInfo) {
-        pageInfo.textContent = `Sehife ${currentPage} / ${totalPages}`;
-    }
-    if (prevBtn) {
-        prevBtn.disabled = currentPage <= 1;
-    }
-    if (nextBtn) {
-        nextBtn.disabled = currentPage >= totalPages;
-    }
 }
 
 // Open add room modal
