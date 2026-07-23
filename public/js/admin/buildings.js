@@ -1,5 +1,13 @@
 // Admin Buildings JavaScript
 
+// Helper function to make authenticated fetch calls
+async function authenticatedFetch(url, options = {}) {
+    return fetch(url, {
+        ...options,
+        credentials: 'include'
+    });
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     loadUserInfo();
     loadBuildings();
@@ -9,7 +17,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // Load user info
 async function loadUserInfo() {
     try {
-        const response = await fetch('/api/auth/me', {
+        const response = await authenticatedFetch('/api/auth/me', {
             headers: {
                 'Content-Type': 'application/json'
             }
@@ -18,7 +26,7 @@ async function loadUserInfo() {
         if (data.success && data.data) {
             document.getElementById('current-user').textContent = data.data.username;
             const roleBadge = document.getElementById('user-role');
-            roleBadge.textContent = data.data.role === 'admin' ? 'Admin' : 'İstifadəçi';
+            roleBadge.textContent = data.data.role === 'admin' ? 'Admin' : '\u0130stifad\u0259\u0017i';
             roleBadge.className = `badge badge-${data.data.role === 'admin' ? 'info' : 'success'}`;
         }
     } catch (error) {
@@ -46,17 +54,17 @@ async function loadBuildings() {
             url += '?' + params.join('&');
         }
         
-        const response = await fetch(url);
+        const response = await authenticatedFetch(url);
         const data = await response.json();
         
         if (data.success) {
             renderBuildingsTable(data.data);
         } else {
-            showAlert(data.error || 'Binaları yükləmək alınmadı', 'error');
+            showAlert(data.error || 'Binalar\u0131 y\u00fckl\u0259m\u0259k al\u0131nmad\u0131', 'error');
         }
     } catch (error) {
         console.error('Error loading buildings:', error);
-        showAlert('Server xəta: ' + error.message, 'error');
+        showAlert('Server x\u0259ta: ' + error.message, 'error');
     }
 }
 
@@ -65,7 +73,7 @@ function renderBuildingsTable(buildings) {
     const tableBody = document.getElementById('buildings-table-body');
     
     if (!buildings || buildings.length === 0) {
-        tableBody.innerHTML = '<tr><td colspan="6" class="text-center">Heç bir bina tapılmadı</td></tr>';
+        tableBody.innerHTML = '<tr><td colspan="6" class="text-center">He\u0017 bir bina tap\u0131lmad\u0131</td></tr>';
         return;
     }
     
@@ -95,22 +103,32 @@ function renderBuildingsTable(buildings) {
 // Load organizations for select dropdown
 async function loadOrganizationsForSelect() {
     try {
-        const response = await fetch('/api/organizations');
+        const response = await authenticatedFetch('/api/organizations');
         const data = await response.json();
         
-        if (data.success) {
-            const select = document.getElementById('organization-building-filter');
-            const addSelect = document.getElementById('building-organization');
-            const editSelect = document.getElementById('edit-building-organization');
+        if (data.success && data.data) {
+            const orgSelect = document.getElementById('building-organization');
+            const filterSelect = document.getElementById('organization-building-filter');
             
-            const options = '<option value="">Bütün təşkilatlar</option>' +
-                data.data.map(org => `<option value="${org.id}">${org.name}</option>`).join('');
+            if (orgSelect) {
+                orgSelect.innerHTML = '<option value="">Se\u0017in</option>';
+                data.data.forEach(org => {
+                    const option = document.createElement('option');
+                    option.value = org.id;
+                    option.textContent = org.name;
+                    orgSelect.appendChild(option);
+                });
+            }
             
-            if (select) select.innerHTML = options;
-            if (addSelect) addSelect.innerHTML = '<option value="">Seçin</option>' + 
-                data.data.map(org => `<option value="${org.id}">${org.name}</option>`).join('');
-            if (editSelect) editSelect.innerHTML = '<option value="">Seçin</option>' + 
-                data.data.map(org => `<option value="${org.id}">${org.name}</option>`).join('');
+            if (filterSelect) {
+                filterSelect.innerHTML = '<option value="">B\u00fct\u00fcn t\u0259\u015fkilatlar</option>';
+                data.data.forEach(org => {
+                    const option = document.createElement('option');
+                    option.value = org.id;
+                    option.textContent = org.name;
+                    filterSelect.appendChild(option);
+                });
+            }
         }
     } catch (error) {
         console.error('Error loading organizations:', error);
@@ -119,163 +137,121 @@ async function loadOrganizationsForSelect() {
 
 // Open add building modal
 function openAddBuildingModal() {
-    document.getElementById('add-building-modal').classList.add('active');
-}
-
-// Close add building modal
-function closeAddBuildingModal() {
-    document.getElementById('add-building-modal').classList.remove('active');
+    const modal = document.getElementById('add-building-modal');
+    if (!modal) return;
+    
+    document.getElementById('building-id').value = '';
     document.getElementById('building-name').value = '';
     document.getElementById('building-description').value = '';
     document.getElementById('building-organization').value = '';
-}
-
-// Add new building
-async function addBuilding() {
-    const name = document.getElementById('building-name').value.trim();
-    const description = document.getElementById('building-description').value.trim();
-    const organization_id = document.getElementById('building-organization').value;
     
-    if (!name) {
-        showAlert('Bina adı tələb olunur', 'error');
-        return;
-    }
-    
-    if (!organization_id) {
-        showAlert('Təşkilat seçilməlidir', 'error');
-        return;
-    }
-    
-    try {
-        const response = await fetch('/api/buildings', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ name, description, organization_id })
-        });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-            showAlert('Bina uğurla yaradıldı!', 'success');
-            closeAddBuildingModal();
-            loadBuildings();
-        } else {
-            showAlert(data.error || 'Xəta baş verdi', 'error');
-        }
-    } catch (error) {
-        showAlert('Server xəta: ' + error.message, 'error');
-    }
+    modal.classList.add('active');
 }
 
 // Open edit building modal
-async function openEditBuildingModal(id) {
+async function openEditBuildingModal(buildingId) {
     try {
-        const response = await fetch(`/api/buildings/${id}`);
+        const response = await authenticatedFetch(`/api/buildings/${buildingId}`);
         const data = await response.json();
         
         if (data.success) {
             const building = data.data;
-            document.getElementById('edit-building-id').value = building.id;
-            document.getElementById('edit-building-name').value = building.name || '';
-            document.getElementById('edit-building-description').value = building.description || '';
-            document.getElementById('edit-building-organization').value = building.organization_id || '';
-            document.getElementById('edit-building-modal').classList.add('active');
-        } else {
-            showAlert(data.error || 'Bina tapılmadı', 'error');
+            const modal = document.getElementById('add-building-modal');
+            
+            if (!modal) return;
+            
+            document.getElementById('building-id').value = building.id;
+            document.getElementById('building-name').value = building.name || '';
+            document.getElementById('building-description').value = building.description || '';
+            document.getElementById('building-organization').value = building.organization_id || '';
+            
+            modal.classList.add('active');
         }
     } catch (error) {
-        showAlert('Server xəta: ' + error.message, 'error');
+        console.error('Error loading building:', error);
     }
 }
 
-// Close edit building modal
-function closeEditBuildingModal() {
-    document.getElementById('edit-building-modal').classList.remove('active');
+// Close building modal
+function closeBuildingModal() {
+    const modal = document.getElementById('add-building-modal');
+    if (modal) {
+        modal.classList.remove('active');
+    }
 }
 
-// Update building
-async function updateBuilding() {
-    const id = document.getElementById('edit-building-id').value;
-    const name = document.getElementById('edit-building-name').value.trim();
-    const description = document.getElementById('edit-building-description').value.trim();
-    const organization_id = document.getElementById('edit-building-organization').value;
+// Save building
+async function saveBuilding() {
+    const id = document.getElementById('building-id').value;
+    const name = document.getElementById('building-name').value.trim();
+    const description = document.getElementById('building-description').value.trim();
+    const organizationId = document.getElementById('building-organization').value;
     
-    if (!name) {
-        showAlert('Bina adı tələb olunur', 'error');
-        return;
-    }
-    
-    if (!organization_id) {
-        showAlert('Təşkilat seçilməlidir', 'error');
+    if (!name || !organizationId) {
+        showAlert('Bina ad\u0131 v\u0259 t\u0259\u015fkilat m\u00fctl\u0259q doldurulmal\u0131d\u0131r', 'error');
         return;
     }
     
     try {
-        const response = await fetch(`/api/buildings/${id}`, {
-            method: 'PUT',
+        const buildingData = { name, description, organization_id: organizationId };
+        
+        let url = '/api/buildings';
+        let method = 'POST';
+        
+        if (id) {
+            url = `/api/buildings/${id}`;
+            method = 'PUT';
+        }
+        
+        const response = await authenticatedFetch(url, {
+            method,
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ name, description, organization_id })
+            body: JSON.stringify(buildingData)
         });
         
         const data = await response.json();
         
         if (data.success) {
-            showAlert('Bina uğurla yeniləndi!', 'success');
-            closeEditBuildingModal();
+            closeBuildingModal();
             loadBuildings();
+            showAlert(id ? 'Bina u\u011furla yenil\u0259ndi' : 'Bina u\u011furla \u0259lav\u0259 edildi', 'success');
         } else {
-            showAlert(data.error || 'Xəta baş verdi', 'error');
+            showAlert(data.error || 'X\u0259ta ba\u015f verdi', 'error');
         }
     } catch (error) {
-        showAlert('Server xəta: ' + error.message, 'error');
+        console.error('Error saving building:', error);
+        showAlert('Bina saxlanark\u0259n x\u0259ta ba\u015f verdi', 'error');
     }
 }
 
 // Delete building
-async function deleteBuilding(id, name) {
-    if (!confirm(`"${name}" binasını silmək istədiyinizə əminsiniz?`)) {
-        return;
-    }
-    
-    try {
-        const response = await fetch(`/api/buildings/${id}`, {
-            method: 'DELETE'
-        });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-            showAlert('Bina uğurla silindi!', 'success');
-            loadBuildings();
-        } else {
-            showAlert(data.error || 'Xəta baş verdi', 'error');
+async function deleteBuilding(buildingId, buildingName) {
+    if (confirm(`"${buildingName}" binas\u0131n\u0131 silm\u0259k ist\u0259diyiniz\u0259 \u0259minsiniz?`)) {
+        try {
+            const response = await authenticatedFetch(`/api/buildings/${buildingId}`, {
+                method: 'DELETE'
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                loadBuildings();
+                showAlert('Bina u\u011furla silindi', 'success');
+            } else {
+                showAlert(data.error || 'X\u0259ta ba\u015f verdi', 'error');
+            }
+        } catch (error) {
+            console.error('Error deleting building:', error);
+            showAlert('Bina silin\u0259rk\u0259n x\u0259ta ba\u015f verdi', 'error');
         }
-    } catch (error) {
-        showAlert('Server xəta: ' + error.message, 'error');
     }
 }
 
-// Logout function
-async function logout() {
-    try {
-        const response = await fetch('/api/auth/logout', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
-        const data = await response.json();
-        if (data.success) {
-            window.location.href = '/login';
-        }
-    } catch (error) {
-        console.error('Logout error:', error);
-        window.location.href = '/login';
-    }
+// Helper functions
+function showAlert(message, type = 'info') {
+    alert(message);
 }
 
 // Close modals on outside click

@@ -1,5 +1,13 @@
 // Admin Users JavaScript
 
+// Helper function to make authenticated fetch calls
+async function authenticatedFetch(url, options = {}) {
+    return fetch(url, {
+        ...options,
+        credentials: 'include'
+    });
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     loadUserInfo();
     loadUsers();
@@ -8,7 +16,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // Load user info
 async function loadUserInfo() {
     try {
-        const response = await fetch('/api/auth/me', {
+        const response = await authenticatedFetch('/api/auth/me', {
             headers: {
                 'Content-Type': 'application/json'
             }
@@ -17,7 +25,7 @@ async function loadUserInfo() {
         if (data.success && data.data) {
             document.getElementById('current-user').textContent = data.data.username;
             const roleBadge = document.getElementById('user-role');
-            roleBadge.textContent = data.data.role === 'admin' ? 'Admin' : 'İstifadəçi';
+            roleBadge.textContent = data.data.role === 'admin' ? 'Admin' : '\u0130stifad\u0259\u0017i';
             roleBadge.className = `badge badge-${data.data.role === 'admin' ? 'info' : 'success'}`;
         }
     } catch (error) {
@@ -45,17 +53,17 @@ async function loadUsers() {
             url += '?' + params.join('&');
         }
         
-        const response = await fetch(url);
+        const response = await authenticatedFetch(url);
         const data = await response.json();
         
         if (data.success) {
             renderUsersTable(data.data);
         } else {
-            showAlert(data.error || 'İstifadəçiləri yükləmək alınmadı', 'error');
+            showAlert(data.error || '\u0130stifad\u0259\u0017il\u0259ri y\u00fckl\u0259m\u0259k al\u0131nmad\u0131', 'error');
         }
     } catch (error) {
         console.error('Error loading users:', error);
-        showAlert('Server xəta: ' + error.message, 'error');
+        showAlert('Server x\u0259ta: ' + error.message, 'error');
     }
 }
 
@@ -64,17 +72,15 @@ function renderUsersTable(users) {
     const tableBody = document.getElementById('users-table-body');
     
     if (!users || users.length === 0) {
-        tableBody.innerHTML = '<tr><td colspan="6" class="text-center">Heç bir istifadəçi tapılmadı</td></tr>';
+        tableBody.innerHTML = '<tr><td colspan="5" class="text-center">He\u0017 bir istifad\u0259\u0017i tap\u0131lmad\u0131</td></tr>';
         return;
     }
     
     tableBody.innerHTML = users.map(user => `
         <tr>
             <td>${user.username || '-'}</td>
-            <td><span class="badge badge-${user.role === 'admin' ? 'info' : 'success'}">${user.role === 'admin' ? 'Admin' : 'İstifadəçi'}</span></td>
+            <td><span class="badge badge-${user.role === 'admin' ? 'info' : 'success'}">${user.role || '-'}</span></td>
             <td>${new Date(user.created_at).toLocaleDateString('az-AZ')}</td>
-            <td>-</td>
-            <td><span class="badge badge-success">Aktiv</span></td>
             <td>
                 <button class="btn btn-primary btn-icon" onclick="openEditUserModal('${user.id}')">
                     <i class="fas fa-edit"></i>
@@ -89,162 +95,130 @@ function renderUsersTable(users) {
 
 // Open add user modal
 function openAddUserModal() {
-    document.getElementById('add-user-modal').classList.add('active');
-}
-
-// Close add user modal
-function closeAddUserModal() {
-    document.getElementById('add-user-modal').classList.remove('active');
+    const modal = document.getElementById('add-user-modal');
+    if (!modal) return;
+    
+    document.getElementById('user-id').value = '';
     document.getElementById('user-username').value = '';
     document.getElementById('user-password').value = '';
-    document.getElementById('user-role-select').value = '';
-}
-
-// Add new user
-async function addUser() {
-    const username = document.getElementById('user-username').value.trim();
-    const password = document.getElementById('user-password').value;
-    const role = document.getElementById('user-role-select').value;
+    document.getElementById('user-role').value = 'user';
     
-    if (!username || !password || !role) {
-        showAlert('Bütün sahələr tələb olunur', 'error');
-        return;
-    }
-    
-    if (password.length < 6) {
-        showAlert('Şifrə minimum 6 simvoldan ibarət olmalıdır', 'error');
-        return;
-    }
-    
-    try {
-        const response = await fetch('/api/users', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ username, password, role })
-        });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-            showAlert('İstifadəçi uğurla yaradıldı!', 'success');
-            closeAddUserModal();
-            loadUsers();
-        } else {
-            showAlert(data.error || 'Xəta baş verdi', 'error');
-        }
-    } catch (error) {
-        showAlert('Server xəta: ' + error.message, 'error');
-    }
+    modal.classList.add('active');
 }
 
 // Open edit user modal
-async function openEditUserModal(id) {
+async function openEditUserModal(userId) {
     try {
-        const response = await fetch(`/api/users/${id}`);
+        const response = await authenticatedFetch(`/api/users/${userId}`);
         const data = await response.json();
         
         if (data.success) {
             const user = data.data;
-            document.getElementById('edit-user-id').value = user.id;
-            document.getElementById('edit-user-username').value = user.username || '';
-            document.getElementById('edit-user-role').value = user.role || '';
-            document.getElementById('edit-user-modal').classList.add('active');
-        } else {
-            showAlert(data.error || 'İstifadəçi tapılmadı', 'error');
+            const modal = document.getElementById('add-user-modal');
+            
+            if (!modal) return;
+            
+            document.getElementById('user-id').value = user.id;
+            document.getElementById('user-username').value = user.username || '';
+            document.getElementById('user-password').value = '';
+            document.getElementById('user-role').value = user.role || 'user';
+            
+            modal.classList.add('active');
         }
     } catch (error) {
-        showAlert('Server xəta: ' + error.message, 'error');
+        console.error('Error loading user:', error);
     }
 }
 
-// Close edit user modal
-function closeEditUserModal() {
-    document.getElementById('edit-user-modal').classList.remove('active');
+// Close user modal
+function closeUserModal() {
+    const modal = document.getElementById('add-user-modal');
+    if (modal) {
+        modal.classList.remove('active');
+    }
 }
 
-// Update user
-async function updateUser() {
-    const id = document.getElementById('edit-user-id').value;
-    const username = document.getElementById('edit-user-username').value.trim();
-    const role = document.getElementById('edit-user-role').value;
-    const password = document.getElementById('edit-user-password').value;
+// Save user
+async function saveUser() {
+    const id = document.getElementById('user-id').value;
+    const username = document.getElementById('user-username').value.trim();
+    const password = document.getElementById('user-password').value;
+    const role = document.getElementById('user-role').value;
     
-    if (!username || !role) {
-        showAlert('İstifadəçi adı və rol tələb olunur', 'error');
+    if (!username) {
+        showAlert('\u0130stifad\u0259\u0017i ad\u0131 m\u00fctl\u0259q doldurulmal\u0131d\u0131r', 'error');
         return;
     }
     
-    const updateData = { username, role };
-    if (password && password.length >= 6) {
-        updateData.password = password;
+    if (!id && !password) {
+        showAlert('Yeni istifad\u0259\u0017i \u00fc\u0017\u00fcn \u015eifr\u0259 t\u0259l\u0259b olunur', 'error');
+        return;
     }
     
     try {
-        const response = await fetch(`/api/users/${id}`, {
-            method: 'PUT',
+        const userData = { username, role };
+        
+        if (password) {
+            userData.password = password;
+        }
+        
+        let url = '/api/users';
+        let method = 'POST';
+        
+        if (id) {
+            url = `/api/users/${id}`;
+            method = 'PUT';
+        }
+        
+        const response = await authenticatedFetch(url, {
+            method,
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(updateData)
+            body: JSON.stringify(userData)
         });
         
         const data = await response.json();
         
         if (data.success) {
-            showAlert('İstifadəçi uğurla yeniləndi!', 'success');
-            closeEditUserModal();
+            closeUserModal();
             loadUsers();
+            showAlert(id ? '\u0130stifad\u0259\u0017i u\u011furla yenil\u0259ndi' : '\u0130stifad\u0259\u0017i u\u011furla \u0259lav\u0259 edildi', 'success');
         } else {
-            showAlert(data.error || 'Xəta baş verdi', 'error');
+            showAlert(data.error || 'X\u0259ta ba\u015f verdi', 'error');
         }
     } catch (error) {
-        showAlert('Server xəta: ' + error.message, 'error');
+        console.error('Error saving user:', error);
+        showAlert('\u0130stifad\u0259\u0017ini saxlayarken x\u0259ta ba\u015f verdi', 'error');
     }
 }
 
 // Delete user
-async function deleteUser(id, username) {
-    if (!confirm(`"${username}" istifadəçisini silmək istədiyinizə əminsiniz?`)) {
-        return;
-    }
-    
-    try {
-        const response = await fetch(`/api/users/${id}`, {
-            method: 'DELETE'
-        });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-            showAlert('İstifadəçi uğurla silindi!', 'success');
-            loadUsers();
-        } else {
-            showAlert(data.error || 'Xəta baş verdi', 'error');
+async function deleteUser(userId, username) {
+    if (confirm(`"${username}" istifad\u0259\u0017ini silm\u0259k ist\u0259diyiniz\u0259 \u0259minsiniz?`)) {
+        try {
+            const response = await authenticatedFetch(`/api/users/${userId}`, {
+                method: 'DELETE'
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                loadUsers();
+                showAlert('\u0130stifad\u0259\u0017i u\u011furla silindi', 'success');
+            } else {
+                showAlert(data.error || 'X\u0259ta ba\u015f verdi', 'error');
+            }
+        } catch (error) {
+            console.error('Error deleting user:', error);
+            showAlert('\u0130stifad\u0259\u0017ini sil\u0259rk\u0259n x\u0259ta ba\u015f verdi', 'error');
         }
-    } catch (error) {
-        showAlert('Server xəta: ' + error.message, 'error');
     }
 }
 
-// Logout function
-async function logout() {
-    try {
-        const response = await fetch('/api/auth/logout', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
-        const data = await response.json();
-        if (data.success) {
-            window.location.href = '/login';
-        }
-    } catch (error) {
-        console.error('Logout error:', error);
-        window.location.href = '/login';
-    }
+// Helper functions
+function showAlert(message, type = 'info') {
+    alert(message);
 }
 
 // Close modals on outside click
