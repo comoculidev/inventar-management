@@ -6,7 +6,7 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const { runMigrations } = require('./utils/migrationRunner');
 const { verifyAuth } = require('./middleware/authMiddleware');
-const { verifyAdmin } = require('./middleware/roleMiddleware');
+const { verifyAdmin, verifyUser } = require('./middleware/roleMiddleware');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -59,6 +59,19 @@ app.get('/organization/building/room/:id', verifyAuth, verifyAdmin, (req, res) =
     res.sendFile(path.join(__dirname, 'views', 'admin', 'room-detail.html'));
 });
 
+// User Panel Routes (protected, non-admin only)
+app.get('/user-panel', verifyAuth, verifyUser, (req, res) => {
+    res.sendFile(path.join(__dirname, 'views', 'user-panel.html'));
+});
+
+app.get('/user-panel/my-items', verifyAuth, verifyUser, (req, res) => {
+    res.sendFile(path.join(__dirname, 'views', 'user-my-items.html'));
+});
+
+app.get('/user-panel/profile', verifyAuth, verifyUser, (req, res) => {
+    res.sendFile(path.join(__dirname, 'views', 'user-profile.html'));
+});
+
 // API Routes
 app.use('/api/organizations', verifyAuth, require('./routes/organizations'));
 app.use('/api/buildings', verifyAuth, require('./routes/buildings'));
@@ -68,6 +81,7 @@ app.use('/api/users', verifyAuth, verifyAdmin, require('./routes/users'));
 app.use('/api/history', verifyAuth, require('./routes/historyLogs'));
 app.use('/api/dashboard', verifyAuth, require('./routes/dashboard'));
 app.use('/api/auth', require('./routes/auth'));
+app.use('/api/user', verifyAuth, verifyUser, require('./routes/user'));
 
 // Home route
 app.get('/', (req, res) => {

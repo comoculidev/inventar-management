@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>İstifadəçi Paneli - İnventar İdarəetmə Sistemi</title>
+    <link rel="stylesheet" href="/css/base.css">
+    <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+    <div class="admin-container">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <h2>İnventar</h2>
+                <p>İstifadəçi Paneli</p>
+            </div>
+            <ul class="nav-menu">
+                <li class="active">
+                    <a href="/user-panel">
+                        <span class="nav-icon">📊</span>
+                        <span>İdarə Paneli</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/user-panel/my-items">
+                        <span class="nav-icon">📦</span>
+                        <span>Mənim İnventarım</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/user-panel/profile">
+                        <span class="nav-icon">👤</span>
+                        <span>Profilim</span>
+                    </a>
+                </li>
+            </ul>
+            <div class="nav-footer">
+                <a href="#" onclick="logout()" class="logout-btn">
+                    <span class="nav-icon">👋</span>
+                    <span>Çıxış</span>
+                </a>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="admin-header">
+                <div class="header-left">
+                    <h1>İstifadəçi Paneli</h1>
+                    <p>Xoş gəlmisiniz!</p>
+                </div>
+                <div class="header-right">
+                    <div class="user-info">
+                        <span id="current-user">İstifadəçi</span>
+                        <span id="user-role" class="badge badge-success">İstifadəçi</span>
+                    </div>
+                </div>
+            </header>
+
+            <div class="content-wrapper">
+                <h2>Mənim Statistikam</h2>
+                
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">📦</div>
+                        <div class="stat-info">
+                            <span class="stat-value" id="my-items-count">0</span>
+                            <span class="stat-label">Mənim İnventarım</span>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon">✅</div>
+                        <div class="stat-info">
+                            <span class="stat-value" id="active-items-count">0</span>
+                            <span class="stat-label">Aktiv Elementlər</span>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon">⚠️</div>
+                        <div class="stat-info">
+                            <span class="stat-value" id="maintenance-items-count">0</span>
+                            <span class="stat-label">Təmirdə</span>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon">❌</div>
+                        <div class="stat-info">
+                            <span class="stat-value" id="inactive-items-count">0</span>
+                            <span class="stat-label">Qeyri-aktiv</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>Sistem Haqqında</h3>
+                    <p>Bu, universitetin inventarını idarə etmək üçün nəzərdə tutulmuş sistemdir.</p>
+                    <p>Siz istifadəçi roluna maliksiniz və məhdud funksionallığa maliksiniz.</p>
+                    <p>Əgər daha çox imkanlara ehtiyacınız varsa, admin ilə əlaqə saxlayın.</p>
+                </div>
+
+                <div class="card">
+                    <h3>Sürətli Əməliyyatlar</h3>
+                    <div class="quick-actions">
+                        <a href="/user-panel/my-items" class="btn btn-primary">
+                            Mənim İnventarımı Gör
+                        </a>
+                        <a href="/user-panel/profile" class="btn btn-info">
+                            Profilimi Redaktə Et
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/js/main.js"></script>
+    <script src="/js/user-panel.js"></script>
+</body>
+</html>
