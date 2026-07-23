@@ -1,5 +1,6 @@
 const Room = require('../models/room');
 const Building = require('../models/building');
+const InventoryItem = require('../models/inventoryItem');
 
 class RoomsController {
     static async getAll(req, res) {
@@ -65,6 +66,24 @@ class RoomsController {
             }
         } catch (error) {
             console.error('Error fetching room:', error);
+            res.status(500).json({
+                success: false,
+                error: 'Server error'
+            });
+        }
+    }
+
+    static async getItemsByRoom(req, res) {
+        try {
+            const { id } = req.params;
+            const items = await InventoryItem.getByRoom(id);
+            
+            res.json({
+                success: true,
+                data: items
+            });
+        } catch (error) {
+            console.error('Error fetching items by room:', error);
             res.status(500).json({
                 success: false,
                 error: 'Server error'

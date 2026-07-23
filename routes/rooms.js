@@ -8,6 +8,9 @@ router.get('/', RoomsController.getAll);
 // GET /api/rooms/:id - Get single room
 router.get('/:id', RoomsController.getById);
 
+// GET /api/rooms/:id/items - Get items by room
+router.get('/:id/items', RoomsController.getItemsByRoom);
+
 // GET /api/rooms/building/:buildingId - Get rooms by building
 router.get('/building/:buildingId', RoomsController.getByBuilding);
 

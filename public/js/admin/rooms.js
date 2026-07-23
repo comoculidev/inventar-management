@@ -137,10 +137,11 @@ async function loadRooms() {
         
         if (data.success) {
             renderRooms(data.data);
-            // For now, we'll use a simple pagination
-            // In a real implementation, the API would return total pages
-            totalPages = 1;
-            updatePagination();
+            // Update pagination if available
+            if (data.pagination) {
+                totalPages = data.pagination.totalPages;
+                updatePagination();
+            }
         }
     } catch (error) {
         console.error('Error loading rooms:', error);
@@ -361,58 +362,10 @@ async function confirmDelete() {
     }
 }
 
-// View room items
-async function viewRoomItems(roomId) {
-    try {
-        // Get room details
-        const roomResponse = await fetch(`/api/rooms/${roomId}`, {
-            credentials: 'include'
-        });
-        const roomData = await roomResponse.json();
-        
-        if (roomData.success) {
-            const room = roomData.data;
-            document.getElementById('room-items-title').textContent = `Otaq: ${room.name}`;
-            document.getElementById('room-name-display').textContent = room.name;
-            document.getElementById('room-building-display').textContent = room.building_name || room.building_id || '-';
-            document.getElementById('room-organization-display').textContent = room.organization_name || '-';
-        }
-        
-        // Get room items
-        const itemsResponse = await fetch(`/api/inventory-items?roomId=${roomId}`, {
-            credentials: 'include'
-        });
-        const itemsData = await itemsResponse.json();
-        
-        const tbody = document.getElementById('room-items-table-body');
-        
-        if (itemsData.success && itemsData.data && itemsData.data.length > 0) {
-            tbody.innerHTML = '';
-            itemsData.data.forEach(item => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${escapeHtml(item.inventory_number || '-')}</td>
-                    <td>${escapeHtml(item.location || '-')}</td>
-                    <td><span class="badge badge-${getStatusClass(item.status)}">${escapeHtml(item.status || '-')}</span></td>
-                    <td>${escapeHtml(item.responsible_person || '-')}</td>
-                    <td>${escapeHtml(item.category || '-')}</td>
-                `;
-                tbody.appendChild(row);
-            });
-        } else {
-            tbody.innerHTML = '<tr><td colspan="5" class="text-center">Bu otaqda heç bir inventar yoxdur</td></tr>';
-        }
-        
-        document.getElementById('room-items-modal').style.display = 'block';
-    } catch (error) {
-        console.error('Error loading room items:', error);
-        showError('Otaq elementlərini yüklərkən xəta baş verdi');
-    }
-}
-
-// Close room items modal
-function closeRoomItemsModal() {
-    document.getElementById('room-items-modal').style.display = 'none';
+// View room items - Redirect to room detail page
+function viewRoomItems(roomId) {
+    // Redirect to the room detail page
+    window.location.href = `/organization/building/room/${roomId}`;
 }
 
 // Helper functions
