@@ -216,7 +216,7 @@
                 <button type="button" class="btn btn-secondary" onclick="closeAddItemModal()">
                     Ləğv et
                 </button>
-                <button type="button" class="btn btn-primary" onclick="addItem()">
+                <button type="button" class="btn btn-primary" onclick="saveItem()">
                     <i class="fas fa-save"></i> Yadda saxla
                 </button>
             </div>
@@ -289,13 +289,7 @@
             document.getElementById('import-modal').classList.remove('active');
         }
         
-        // Add item function
-        function addItem() {
-            if (typeof addNewItem === 'function') {
-                addNewItem();
-            }
-        }
-        
+
         // Import Excel function
         function importExcel() {
             if (typeof importExcelFile === 'function') {

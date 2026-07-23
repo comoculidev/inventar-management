@@ -268,7 +268,7 @@ function openAddItemModal() {
     document.getElementById('room-id').value = '';
     document.getElementById('responsible-person').value = '';
     document.getElementById('category').value = '';
-    document.getElementById('item-modal').classList.add('active');
+    document.getElementById('add-item-modal').classList.add('active');
 }
 
 // Open edit item modal
@@ -287,7 +287,7 @@ async function openEditItemModal(id) {
             document.getElementById('room-id').value = item.room_id || '';
             document.getElementById('responsible-person').value = item.responsible_person || '';
             document.getElementById('category').value = item.category || '';
-            document.getElementById('item-modal').classList.add('active');
+            document.getElementById('add-item-modal').classList.add('active');
         }
     } catch (error) {
         console.error('Error loading item:', error);
@@ -297,7 +297,7 @@ async function openEditItemModal(id) {
 
 // Close item modal
 function closeItemModal() {
-    document.getElementById('item-modal').classList.remove('active');
+    document.getElementById('add-item-modal').classList.remove('active');
 }
 
 // Save item

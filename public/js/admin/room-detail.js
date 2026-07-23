@@ -244,12 +244,12 @@ function openAddItemModal() {
     document.getElementById('status').value = '';
     document.getElementById('category').value = '';
     document.getElementById('responsible-person').value = '';
-    document.getElementById('item-modal').style.display = 'block';
+    document.getElementById('add-item-modal').style.display = 'block';
 }
 
 // Close item modal
 function closeItemModal() {
-    document.getElementById('item-modal').style.display = 'none';
+    document.getElementById('add-item-modal').style.display = 'none';
 }
 
 // Edit item
@@ -269,7 +269,7 @@ async function editItem(itemId) {
             document.getElementById('status').value = item.status || '';
             document.getElementById('category').value = item.category || '';
             document.getElementById('responsible-person').value = item.responsible_person || '';
-            document.getElementById('item-modal').style.display = 'block';
+            document.getElementById('add-item-modal').style.display = 'block';
         }
     } catch (error) {
         console.error('Error loading item for edit:', error);

@@ -236,7 +236,7 @@
                 <button type="button" class="btn btn-secondary" onclick="closeAddItemModal()">
                     Ləğv et
                 </button>
-                <button type="button" class="btn btn-primary" onclick="addRoomItem()">
+                <button type="button" class="btn btn-primary" onclick="saveItem()">
                     <i class="fas fa-save"></i> Yadda saxla
                 </button>
             </div>
@@ -279,13 +279,7 @@
             document.getElementById('add-item-modal').classList.remove('active');
         }
         
-        // Add room item function
-        function addRoomItem() {
-            if (typeof addItemToRoom === 'function') {
-                addItemToRoom();
-            }
-        }
-        
+
         // Filter room items function
         function filterRoomItems() {
             if (typeof filterItems === 'function') {
