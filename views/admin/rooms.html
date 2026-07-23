@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Otaqlar - İnventar İdarəetmə Sistemi</title>
+    <link rel="stylesheet" href="/css/base.css">
+    <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+    <div class="admin-container">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <h2>İnventar</h2>
+                <p>İdarə Paneli</p>
+            </div>
+            <ul class="nav-menu">
+                <li>
+                    <a href="/admin/dashboard">
+                        <span class="nav-icon">📊</span>
+                        <span>İdarə Paneli</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/organizations">
+                        <span class="nav-icon">🏢</span>
+                        <span>Təşkilatlar</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/buildings">
+                        <span class="nav-icon">🏗️</span>
+                        <span>Binalar</span>
+                    </a>
+                </li>
+                <li class="active">
+                    <a href="/admin/rooms">
+                        <span class="nav-icon">🚪</span>
+                        <span>Otaqlar</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/inventory">
+                        <span class="nav-icon">📦</span>
+                        <span>İnventar</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/users">
+                        <span class="nav-icon">👥</span>
+                        <span>İstifadəçilər</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/history">
+                        <span class="nav-icon">📜</span>
+                        <span>Tarixçə</span>
+                    </a>
+                </li>
+            </ul>
+            <div class="nav-footer">
+                <a href="#" onclick="logout()" class="logout-btn">
+                    <span class="nav-icon">👋</span>
+                    <span>Çıxış</span>
+                </a>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="admin-header">
+                <div class="header-left">
+                    <h1>Otaqlar İdarəetməsi</h1>
+                    <p>Bütün otaqları idarə edin</p>
+                </div>
+                <div class="header-right">
+                    <div class="user-info">
+                        <span id="current-user">İstifadəçi</span>
+                        <span id="user-role" class="badge badge-info">Admin</span>
+                    </div>
+                </div>
+            </header>
+
+            <div class="content-wrapper">
+                <div class="page-header">
+                    <h2>Otaqlar Siyahısı</h2>
+                    <div class="page-actions">
+                        <button class="btn btn-primary" onclick="openAddRoomModal()">
+                            <span>+</span> Yeni Otaq Əlavə Et
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Search and Filter Bar -->
+                <div class="filter-bar">
+                    <div class="form-group">
+                        <label>Axtarış</label>
+                        <input type="text" id="search-input" placeholder="Otaq adı, təsviri...">
+                    </div>
+                    <div class="form-group">
+                        <label>Təşkilat</label>
+                        <select id="organization-filter" onchange="loadBuildings()">
+                            <option value="">Bütün təşkilatlar</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Bina</label>
+                        <select id="building-filter">
+                            <option value="">Bütün binalar</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-info" onclick="applyFilters()">
+                        Tətbiq Et
+                    </button>
+                    <button class="btn" onclick="resetFilters()">
+                        Sıfırla
+                    </button>
+                </div>
+
+                <!-- Rooms Table -->
+                <div class="table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Adı</th>
+                                <th>Təsviri</th>
+                                <th>Tutumu</th>
+                                <th>Bina</th>
+                                <th>Təşkilat</th>
+                                <th>İnventar Sayı</th>
+                                <th>Əməliyyatlar</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rooms-table-body">
+                            <!-- Rooms will be loaded here -->
+                            <tr>
+                                <td colspan="7" class="text-center">Yüklənir...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                <div class="pagination">
+                    <button class="btn" id="prev-page" onclick="previousPage()">Öncəki</button>
+                    <span id="page-info">Səhifə 1 / 1</span>
+                    <button class="btn" id="next-page" onclick="nextPage()">Növbəti</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Add/Edit Room Modal -->
+    <div class="modal" id="room-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title">Yeni Otaq Əlavə Et</h3>
+                <button class="modal-close" onclick="closeRoomModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="room-form">
+                    <input type="hidden" id="room-id">
+                    <div class="form-group">
+                        <label for="room-name">Otaq Adı *</label>
+                        <input type="text" id="room-name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="room-description">Təsviri</label>
+                        <textarea id="room-description" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="room-capacity">Tutumu</label>
+                        <input type="number" id="room-capacity" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label for="room-building">Bina *</label>
+                        <select id="room-building" required>
+                            <option value="">Seçin</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeRoomModal()">
+                    Ləğv Et
+                </button>
+                <button type="button" class="btn btn-primary" onclick="saveRoom()">
+                    Saxla
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal" id="delete-modal">
+        <div class="modal-content modal-small">
+            <div class="modal-header">
+                <h3>Otağı Sil</h3>
+                <button class="modal-close" onclick="closeDeleteModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Siz əminsinizmi ki, bu otağı silmək istəyirsiz?</p>
+                <p class="text-warning">Bu əməliyyat geri qaytarıla bilməz!</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeDeleteModal()">
+                    Xeyr
+                </button>
+                <button type="button" class="btn btn-danger" onclick="confirmDelete()">
+                    Bəli, Sil
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Room Items Modal -->
+    <div class="modal modal-large" id="room-items-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="room-items-title">Otağın İnventarı</h3>
+                <button class="modal-close" onclick="closeRoomItemsModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="room-info">
+                    <p><strong>Otaq:</strong> <span id="room-name-display"></span></p>
+                    <p><strong>Bina:</strong> <span id="room-building-display"></span></p>
+                    <p><strong>Təşkilat:</strong> <span id="room-organization-display"></span></p>
+                </div>
+                <div class="table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>İnventar Nömrəsi</th>
+                                <th>Yerləşməsi</th>
+                                <th>Status</th>
+                                <th>Məsul Şəxs</th>
+                                <th>Kateqoriya</th>
+                            </tr>
+                        </thead>
+                        <tbody id="room-items-table-body">
+                            <!-- Room items will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeRoomItemsModal()">
+                    Bağla
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/main.js"></script>
+    <script src="/js/admin/rooms.js"></script>
+</body>
+</html>

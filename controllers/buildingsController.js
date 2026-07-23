@@ -4,7 +4,15 @@ const Organization = require('../models/organization');
 class BuildingsController {
     static async getAll(req, res) {
         try {
-            const buildings = await Building.getWithOrganization();
+            const { organizationId } = req.query;
+            
+            let buildings;
+            if (organizationId) {
+                buildings = await Building.getByOrganization(organizationId);
+            } else {
+                buildings = await Building.getWithOrganization();
+            }
+            
             res.json({
                 success: true,
                 data: buildings

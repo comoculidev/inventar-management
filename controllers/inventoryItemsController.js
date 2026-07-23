@@ -11,7 +11,15 @@ const upload = multer({ storage });
 class InventoryItemsController {
     static async getAll(req, res) {
         try {
-            const items = await InventoryItem.getWithDetails();
+            const { roomId } = req.query;
+            
+            let items;
+            if (roomId) {
+                items = await InventoryItem.getByRoom(roomId);
+            } else {
+                items = await InventoryItem.getWithDetails();
+            }
+            
             res.json({
                 success: true,
                 data: items
@@ -98,11 +106,15 @@ class InventoryItemsController {
             });
             
             // Log creation
+            const user = req.user || { id: 'system', username: 'system' };
             await HistoryLog.create({
                 action_type: 'create',
-                room_id: room_id,
-                responsible_person,
-                new_values: { inventory_number, location, status, category }
+                table_name: 'inventory_items',
+                record_id: item.id,
+                old_values: null,
+                new_values: JSON.stringify(item),
+                user_id: user.id,
+                user_name: user.username
             });
             
             res.status(201).json({
@@ -111,12 +123,6 @@ class InventoryItemsController {
             });
         } catch (error) {
             console.error('Error creating inventory item:', error);
-            if (error.message.includes('duplicate key value violates unique constraint')) {
-                return res.status(400).json({
-                    success: false,
-                    error: 'Inventory number already exists'
-                });
-            }
             res.status(500).json({
                 success: false,
                 error: 'Server error'
@@ -154,16 +160,7 @@ class InventoryItemsController {
                 });
             }
             
-            // Get old values for history
-            const oldValues = {
-                inventory_number: item.inventory_number,
-                location: item.location,
-                status: item.status,
-                responsible_person: item.responsible_person,
-                category: item.category,
-                room_id: item.room_id
-            };
-            
+            const oldValues = JSON.stringify(item);
             const updatedItem = await InventoryItem.update(id, {
                 inventory_number,
                 location,
@@ -174,12 +171,15 @@ class InventoryItemsController {
             });
             
             // Log update
+            const user = req.user || { id: 'system', username: 'system' };
             await HistoryLog.create({
                 action_type: 'update',
-                room_id: room_id,
-                responsible_person,
+                table_name: 'inventory_items',
+                record_id: id,
                 old_values: oldValues,
-                new_values: { inventory_number, location, status, category, room_id }
+                new_values: JSON.stringify(updatedItem),
+                user_id: user.id,
+                user_name: user.username
             });
             
             res.json({
@@ -188,12 +188,6 @@ class InventoryItemsController {
             });
         } catch (error) {
             console.error('Error updating inventory item:', error);
-            if (error.message.includes('duplicate key value violates unique constraint')) {
-                return res.status(400).json({
-                    success: false,
-                    error: 'Inventory number already exists'
-                });
-            }
             res.status(500).json({
                 success: false,
                 error: 'Server error'
@@ -215,16 +209,15 @@ class InventoryItemsController {
             }
             
             // Log deletion
+            const user = req.user || { id: 'system', username: 'system' };
             await HistoryLog.create({
                 action_type: 'delete',
-                room_id: item.room_id,
-                responsible_person: item.responsible_person,
-                old_values: {
-                    inventory_number: item.inventory_number,
-                    location: item.location,
-                    status: item.status,
-                    category: item.category
-                }
+                table_name: 'inventory_items',
+                record_id: id,
+                old_values: JSON.stringify(item),
+                new_values: null,
+                user_id: user.id,
+                user_name: user.username
             });
             
             await InventoryItem.delete(id);
@@ -244,16 +237,8 @@ class InventoryItemsController {
 
     static async search(req, res) {
         try {
-            const { q: searchTerm } = req.query;
-            
-            if (!searchTerm) {
-                return res.status(400).json({
-                    success: false,
-                    error: 'Search term is required'
-                });
-            }
-            
-            const items = await InventoryItem.search(searchTerm);
+            const { q } = req.query;
+            const items = await InventoryItem.search(q);
             
             res.json({
                 success: true,
@@ -270,22 +255,18 @@ class InventoryItemsController {
 
     static async filter(req, res) {
         try {
-            const { organizationId, buildingId, roomId, category, status, search, page = 1, limit = 20 } = req.query;
+            const { organizationId, buildingId, category, status } = req.query;
             
-            const result = await InventoryItem.filter({
+            const items = await InventoryItem.filter({
                 organizationId,
                 buildingId,
-                roomId,
                 category,
-                status,
-                search,
-                page: parseInt(page, 10),
-                limit: parseInt(limit, 10)
+                status
             });
             
             res.json({
                 success: true,
-                ...result
+                data: items
             });
         } catch (error) {
             console.error('Error filtering inventory items:', error);
@@ -307,29 +288,36 @@ class InventoryItemsController {
                 });
             }
             
-            // Validate all items have required fields
-            for (const item of items) {
-                if (!item.inventory_number || !item.room_id) {
-                    return res.status(400).json({
-                        success: false,
-                        error: 'Each item must have inventory_number and room_id'
-                    });
+            const createdItems = [];
+            const user = req.user || { id: 'system', username: 'system' };
+            
+            for (const itemData of items) {
+                // Validate room exists
+                const room = await Room.getById(itemData.room_id);
+                if (!room) {
+                    console.warn(`Room not found for item: ${itemData.inventory_number}`);
+                    continue;
                 }
+                
+                const item = await InventoryItem.create(itemData);
+                createdItems.push(item);
+                
+                // Log creation
+                await HistoryLog.create({
+                    action_type: 'create',
+                    table_name: 'inventory_items',
+                    record_id: item.id,
+                    old_values: null,
+                    new_values: JSON.stringify(item),
+                    user_id: user.id,
+                    user_name: user.username
+                });
             }
-            
-            const createdItems = await InventoryItem.bulkCreate(items);
-            
-            // Log bulk creation
-            await HistoryLog.create({
-                action_type: 'import',
-                responsible_person: req.user?.username || 'system',
-                new_values: { count: createdItems.length }
-            });
             
             res.status(201).json({
                 success: true,
                 data: createdItems,
-                message: `${createdItems.length} items created successfully`
+                count: createdItems.length
             });
         } catch (error) {
             console.error('Error bulk creating inventory items:', error);
@@ -340,7 +328,6 @@ class InventoryItemsController {
         }
     }
 
-    // Import from Excel file
     static async importExcel(req, res) {
         try {
             if (!req.file) {
@@ -350,46 +337,48 @@ class InventoryItemsController {
                 });
             }
             
-            // Parse Excel file
-            const items = parseExcelBuffer(req.file.buffer);
-            
-            if (items.length === 0) {
-                return res.status(400).json({
-                    success: false,
-                    error: 'No valid items found in the Excel file'
-                });
-            }
-            
-            // Validate items
-            const { validItems, invalidItems } = validateItems(items);
+            const items = await parseExcelBuffer(req.file.buffer);
+            const { validItems, errors } = validateItems(items);
             
             if (validItems.length === 0) {
                 return res.status(400).json({
                     success: false,
-                    error: 'No valid items to import',
-                    invalidItems
+                    error: 'No valid items found in the file',
+                    errors
                 });
             }
             
-            // Import valid items
-            const createdItems = await InventoryItem.bulkCreate(validItems);
+            const createdItems = [];
+            const user = req.user || { id: 'system', username: 'system' };
             
-            // Log import
-            await HistoryLog.create({
-                action_type: 'import',
-                responsible_person: req.user?.username || 'system',
-                new_values: {
-                    total: items.length,
-                    valid: validItems.length,
-                    invalid: invalidItems.length
+            for (const itemData of validItems) {
+                // Validate room exists
+                const room = await Room.getById(itemData.room_id);
+                if (!room) {
+                    console.warn(`Room not found for item: ${itemData.inventory_number}`);
+                    continue;
                 }
-            });
+                
+                const item = await InventoryItem.create(itemData);
+                createdItems.push(item);
+                
+                // Log creation
+                await HistoryLog.create({
+                    action_type: 'create',
+                    table_name: 'inventory_items',
+                    record_id: item.id,
+                    old_values: null,
+                    new_values: JSON.stringify(item),
+                    user_id: user.id,
+                    user_name: user.username
+                });
+            }
             
             res.status(201).json({
                 success: true,
                 data: createdItems,
-                message: `${createdItems.length} items imported successfully`,
-                invalidItems: invalidItems.length > 0 ? invalidItems : undefined
+                count: createdItems.length,
+                errors
             });
         } catch (error) {
             console.error('Error importing Excel file:', error);

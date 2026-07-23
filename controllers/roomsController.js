@@ -4,10 +4,28 @@ const Building = require('../models/building');
 class RoomsController {
     static async getAll(req, res) {
         try {
-            const rooms = await Room.getWithDetails();
+            const { search, organizationId, buildingId, page = 1, limit = 100 } = req.query;
+            
+            const options = {
+                search,
+                organizationId,
+                buildingId,
+                page: parseInt(page),
+                limit: parseInt(limit)
+            };
+            
+            const rooms = await Room.getFiltered(options);
+            const total = await Room.countFiltered(options);
+            
             res.json({
                 success: true,
-                data: rooms
+                data: rooms,
+                pagination: {
+                    page: parseInt(page),
+                    limit: parseInt(limit),
+                    total,
+                    totalPages: Math.ceil(total / limit)
+                }
             });
         } catch (error) {
             console.error('Error fetching rooms:', error);
@@ -30,10 +48,21 @@ class RoomsController {
                 });
             }
             
-            res.json({
-                success: true,
-                data: room
-            });
+            // Get room with details
+            const rooms = await Room.getFiltered({});
+            const roomWithDetails = rooms.find(r => r.id === id);
+            
+            if (roomWithDetails) {
+                res.json({
+                    success: true,
+                    data: roomWithDetails
+                });
+            } else {
+                res.json({
+                    success: true,
+                    data: room
+                });
+            }
         } catch (error) {
             console.error('Error fetching room:', error);
             res.status(500).json({

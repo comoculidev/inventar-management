@@ -1,17 +1,17 @@
-# Current Task: Task 7.1
+# Current Task: Task 7.2
 
-## Task 7.1: Create Admin Rooms Page Structure
+## Task 7.2: Implement Rooms API Endpoints (Read)
 
 **Status**: IN PROGRESS
 
-**Description**: Build the HTML structure for the rooms page with navigation, search bar, and room list display.
+**Description**: Create backend endpoints to retrieve rooms filtered by organization and search term.
 
-**Goal**: Provide interface where admin can see every room for every organization.
+**Goal**: Enable fetching all rooms with proper filtering and pagination support.
 
 **Expected Result**: 
-A complete HTML page at /admin/rooms with search bar and empty room list container in compact modern UI.
+GET /api/rooms endpoint accepting organization_id query parameter and search parameter for filtering room names.
 
-**Dependencies**: Task 1.5
+**Dependencies**: Task 3.4
 
 **Started**: 2024
 
@@ -19,16 +19,12 @@ A complete HTML page at /admin/rooms with search bar and empty room list contain
 
 ## Implementation Notes
 
-Need to create:
-1. views/admin/rooms.html - Rooms page
-2. Navigation sidebar (reusable from dashboard)
-3. Search bar
-4. Room list display area
-5. Each room should show:
-   - Name
-   - Building name
-   - Organization name
-   - Item count
-   - Actions (View items, Edit, Delete)
-6. Compact modern UI
-7. Azerbaijani language support
+Need to implement:
+1. Update RoomsController.getAll to support query parameters:
+   - organizationId: Filter by organization
+   - buildingId: Filter by building
+   - search: Search by room name or description
+   - page: Pagination page number
+   - limit: Items per page
+2. Update Room model to support filtered queries with pagination
+3. Return pagination metadata in response
