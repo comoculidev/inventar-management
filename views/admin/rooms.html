@@ -197,7 +197,7 @@
                 <button type="button" class="btn btn-secondary" onclick="closeAddRoomModal()">
                     Ləğv et
                 </button>
-                <button type="button" class="btn btn-primary" onclick="addRoom()">
+                <button type="button" class="btn btn-primary" onclick="saveRoom()">
                     <i class="fas fa-save"></i> Yadda saxla
                 </button>
             </div>
@@ -225,61 +225,6 @@
                 window.location.href = '/login';
             }
         }
-        
-        // Modal functions
-        function openAddRoomModal() {
-            document.getElementById('add-room-modal').classList.add('active');
-        }
-        
-        function closeAddRoomModal() {
-            document.getElementById('add-room-modal').classList.remove('active');
-        }
-        
-        // Add room function
-        function addRoom() {
-            if (typeof addNewRoom === 'function') {
-                addNewRoom();
-            }
-        }
-        
-        // Load rooms function
-        function loadRooms() {
-            if (typeof loadRoomsData === 'function') {
-                loadRoomsData();
-            }
-        }
-        
-        // Load user info
-        async function loadUserInfo() {
-            try {
-                const response = await fetch('/api/auth/me', {
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                });
-                const data = await response.json();
-                if (data.success && data.data) {
-                    document.getElementById('current-user').textContent = data.data.username;
-                    const roleBadge = document.getElementById('user-role');
-                    roleBadge.textContent = data.data.role === 'admin' ? 'Admin' : 'İstifadəçi';
-                    roleBadge.className = `badge badge-${data.data.role === 'admin' ? 'info' : 'success'}`;
-                }
-            } catch (error) {
-                console.error('Error loading user info:', error);
-            }
-        }
-        
-        // Close modals on outside click
-        window.onclick = function(event) {
-            if (event.target.classList.contains('modal')) {
-                event.target.classList.remove('active');
-            }
-        }
-        
-        // Initialize on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            loadUserInfo();
-        });
     </script>
 </body>
 </html>

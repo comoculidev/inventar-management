@@ -6,34 +6,32 @@ let currentFilters = {
     organizationId: '',
     buildingId: ''
 };
+let editingRoomId = null;
 
 // Initialize page
 document.addEventListener('DOMContentLoaded', function() {
     loadOrganizations();
     loadRooms();
-    loadUserInfo();
     
-    // Add event listeners
-    document.getElementById('search-input').addEventListener('keyup', function(e) {
-        if (e.key === 'Enter') {
-            applyFilters();
-        }
-    });
-});
-
-// Load user info
-function loadUserInfo() {
-    const user = getCookie('user');
-    if (user) {
-        try {
-            const userData = JSON.parse(user);
-            document.getElementById('current-user').textContent = userData.username || 'İstifadəçi';
-            document.getElementById('user-role').textContent = userData.role === 'admin' ? 'Admin' : 'İstifadəçi';
-        } catch (e) {
-            console.error('Error parsing user data:', e);
-        }
+    // Add event listeners for filter changes
+    const orgFilter = document.getElementById('organization-room-filter');
+    const buildingFilter = document.getElementById('building-room-filter');
+    const searchInput = document.getElementById('search-rooms');
+    
+    if (orgFilter) {
+        orgFilter.addEventListener('change', function() {
+            loadBuildings();
+        });
     }
-}
+    
+    if (searchInput) {
+        searchInput.addEventListener('keyup', function(e) {
+            if (e.key === 'Enter') {
+                applyFilters();
+            }
+        });
+    }
+});
 
 // Load organizations for filter dropdown
 async function loadOrganizations() {
@@ -44,15 +42,17 @@ async function loadOrganizations() {
         const data = await response.json();
         
         if (data.success) {
-            const orgSelect = document.getElementById('organization-filter');
-            orgSelect.innerHTML = '<option value="">Bütün təşkilatlar</option>';
-            
-            data.data.forEach(org => {
-                const option = document.createElement('option');
-                option.value = org.id;
-                option.textContent = org.name;
-                orgSelect.appendChild(option);
-            });
+            const orgSelect = document.getElementById('organization-room-filter');
+            if (orgSelect) {
+                orgSelect.innerHTML = '<option value="">Butun teskilatlar</option>';
+                
+                data.data.forEach(org => {
+                    const option = document.createElement('option');
+                    option.value = org.id;
+                    option.textContent = org.name;
+                    orgSelect.appendChild(option);
+                });
+            }
         }
     } catch (error) {
         console.error('Error loading organizations:', error);
@@ -61,8 +61,10 @@ async function loadOrganizations() {
 
 // Load buildings based on selected organization
 async function loadBuildings() {
-    const orgId = document.getElementById('organization-filter').value;
-    const buildingSelect = document.getElementById('building-filter');
+    const orgId = document.getElementById('organization-room-filter')?.value;
+    const buildingSelect = document.getElementById('building-room-filter');
+    
+    if (!buildingSelect) return;
     
     try {
         let url = '/api/buildings';
@@ -76,7 +78,7 @@ async function loadBuildings() {
         const data = await response.json();
         
         if (data.success) {
-            buildingSelect.innerHTML = '<option value="">Bütün binalar</option>';
+            buildingSelect.innerHTML = '<option value="">Butun binalar</option>';
             
             data.data.forEach(building => {
                 const option = document.createElement('option');
@@ -100,14 +102,16 @@ async function loadBuildingsForModal() {
         
         if (data.success) {
             const buildingSelect = document.getElementById('room-building');
-            buildingSelect.innerHTML = '<option value="">Seçin</option>';
-            
-            data.data.forEach(building => {
-                const option = document.createElement('option');
-                option.value = building.id;
-                option.textContent = building.name;
-                buildingSelect.appendChild(option);
-            });
+            if (buildingSelect) {
+                buildingSelect.innerHTML = '<option value="">Secin</option>';
+                
+                data.data.forEach(building => {
+                    const option = document.createElement('option');
+                    option.value = building.id;
+                    option.textContent = building.name;
+                    buildingSelect.appendChild(option);
+                });
+            }
         }
     } catch (error) {
         console.error('Error loading buildings for modal:', error);
@@ -120,14 +124,18 @@ async function loadRooms() {
         const params = new URLSearchParams();
         params.append('page', currentPage);
         
-        if (currentFilters.search) {
-            params.append('search', currentFilters.search);
+        const searchInput = document.getElementById('search-rooms');
+        const orgFilter = document.getElementById('organization-room-filter');
+        const buildingFilter = document.getElementById('building-room-filter');
+        
+        if (searchInput && searchInput.value) {
+            params.append('search', searchInput.value);
         }
-        if (currentFilters.organizationId) {
-            params.append('organizationId', currentFilters.organizationId);
+        if (orgFilter && orgFilter.value) {
+            params.append('organizationId', orgFilter.value);
         }
-        if (currentFilters.buildingId) {
-            params.append('buildingId', currentFilters.buildingId);
+        if (buildingFilter && buildingFilter.value) {
+            params.append('buildingId', buildingFilter.value);
         }
         
         const response = await fetch(`/api/rooms?${params.toString()}`, {
@@ -145,7 +153,7 @@ async function loadRooms() {
         }
     } catch (error) {
         console.error('Error loading rooms:', error);
-        showError('Otaqları yüklərkən xəta baş verdi');
+        showError('Otaqlar yuklenmek alinmadi');
     }
 }
 
@@ -153,8 +161,10 @@ async function loadRooms() {
 function renderRooms(rooms) {
     const tbody = document.getElementById('rooms-table-body');
     
+    if (!tbody) return;
+    
     if (!rooms || rooms.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" class="text-center">Heç bir otaq tapılmadı</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center">Hech bir otaq tapilmadi</td></tr>';
         return;
     }
     
@@ -164,19 +174,18 @@ function renderRooms(rooms) {
         const row = document.createElement('tr');
         row.innerHTML = `
             <td>${escapeHtml(room.name || '')}</td>
-            <td>${escapeHtml(room.description || '-')}</td>
-            <td>${room.capacity || '-'}</td>
             <td>${escapeHtml(room.building_name || room.building_id || '-')}</td>
             <td>${escapeHtml(room.organization_name || '-')}</td>
-            <td>${room.item_count || 0}</td>
+            <td>${room.capacity || '-'}</td>
+            <td>${escapeHtml(room.description || '-')}</td>
             <td>
-                <button class="btn btn-info btn-sm" onclick="viewRoomItems('${room.id}')" title="İnventarı göstər">
+                <button class="btn btn-info btn-sm" onclick="viewRoomItems('${room.id}')" title="Inventari gosterm">
                     👁️
                 </button>
-                <button class="btn btn-warning btn-sm" onclick="editRoom('${room.id}')" title="Redaktə et">
+                <button class="btn btn-warning btn-sm" onclick="openEditRoomModal('${room.id}')" title="Redakte et">
                     ✏️
                 </button>
-                <button class="btn btn-danger btn-sm" onclick="deleteRoom('${room.id}')" title="Sil">
+                <button class="btn btn-danger btn-sm" onclick="confirmDeleteRoom('${room.id}', '${escapeHtml(room.name || '')}')" title="Sil">
                     🗑️
                 </button>
             </td>
@@ -187,18 +196,28 @@ function renderRooms(rooms) {
 
 // Apply filters
 function applyFilters() {
-    currentFilters.search = document.getElementById('search-input').value;
-    currentFilters.organizationId = document.getElementById('organization-filter').value;
-    currentFilters.buildingId = document.getElementById('building-filter').value;
+    const searchInput = document.getElementById('search-rooms');
+    const orgFilter = document.getElementById('organization-room-filter');
+    const buildingFilter = document.getElementById('building-room-filter');
+    
+    if (searchInput) currentFilters.search = searchInput.value;
+    if (orgFilter) currentFilters.organizationId = orgFilter.value;
+    if (buildingFilter) currentFilters.buildingId = buildingFilter.value;
+    
     currentPage = 1;
     loadRooms();
 }
 
 // Reset filters
 function resetFilters() {
-    document.getElementById('search-input').value = '';
-    document.getElementById('organization-filter').value = '';
-    document.getElementById('building-filter').value = '';
+    const searchInput = document.getElementById('search-rooms');
+    const orgFilter = document.getElementById('organization-room-filter');
+    const buildingFilter = document.getElementById('building-room-filter');
+    
+    if (searchInput) searchInput.value = '';
+    if (orgFilter) orgFilter.value = '';
+    if (buildingFilter) buildingFilter.value = '';
+    
     currentFilters = {
         search: '',
         organizationId: '',
@@ -224,31 +243,51 @@ function nextPage() {
 }
 
 function updatePagination() {
-    document.getElementById('page-info').textContent = `Səhifə ${currentPage} / ${totalPages}`;
-    document.getElementById('prev-page').disabled = currentPage <= 1;
-    document.getElementById('next-page').disabled = currentPage >= totalPages;
+    const pageInfo = document.getElementById('page-info');
+    const prevBtn = document.getElementById('prev-page');
+    const nextBtn = document.getElementById('next-page');
+    
+    if (pageInfo) {
+        pageInfo.textContent = `Sehife ${currentPage} / ${totalPages}`;
+    }
+    if (prevBtn) {
+        prevBtn.disabled = currentPage <= 1;
+    }
+    if (nextBtn) {
+        nextBtn.disabled = currentPage >= totalPages;
+    }
 }
 
 // Open add room modal
 function openAddRoomModal() {
-    document.getElementById('modal-title').textContent = 'Yeni Otaq Əlavə Et';
-    document.getElementById('room-id').value = '';
-    document.getElementById('room-name').value = '';
-    document.getElementById('room-description').value = '';
-    document.getElementById('room-capacity').value = '';
-    document.getElementById('room-building').value = '';
-    
-    loadBuildingsForModal();
-    document.getElementById('room-modal').style.display = 'block';
+    const modal = document.getElementById('add-room-modal');
+    if (modal) {
+        // Clear form
+        const nameInput = document.getElementById('room-name');
+        const descInput = document.getElementById('room-description');
+        const capacityInput = document.getElementById('room-capacity');
+        const buildingSelect = document.getElementById('room-building');
+        const modalTitle = modal.querySelector('.modal-header h3');
+        
+        if (nameInput) nameInput.value = '';
+        if (descInput) descInput.value = '';
+        if (capacityInput) capacityInput.value = '';
+        if (buildingSelect) buildingSelect.value = '';
+        if (modalTitle) modalTitle.textContent = 'Yeni Otaq';
+        
+        // Reset editing state
+        editingRoomId = null;
+        
+        // Load buildings
+        loadBuildingsForModal();
+        
+        // Show modal
+        modal.classList.add('active');
+    }
 }
 
-// Close room modal
-function closeRoomModal() {
-    document.getElementById('room-modal').style.display = 'none';
-}
-
-// Edit room
-async function editRoom(roomId) {
+// Open edit room modal
+async function openEditRoomModal(roomId) {
     try {
         const response = await fetch(`/api/rooms/${roomId}`, {
             credentials: 'include'
@@ -257,32 +296,61 @@ async function editRoom(roomId) {
         
         if (data.success) {
             const room = data.data;
-            document.getElementById('modal-title').textContent = 'Otağı Redaktə Et';
-            document.getElementById('room-id').value = room.id;
-            document.getElementById('room-name').value = room.name || '';
-            document.getElementById('room-description').value = room.description || '';
-            document.getElementById('room-capacity').value = room.capacity || '';
-            document.getElementById('room-building').value = room.building_id || '';
+            const modal = document.getElementById('add-room-modal');
             
-            loadBuildingsForModal();
-            document.getElementById('room-modal').style.display = 'block';
+            if (modal) {
+                // Set form values
+                const nameInput = document.getElementById('room-name');
+                const descInput = document.getElementById('room-description');
+                const capacityInput = document.getElementById('room-capacity');
+                const buildingSelect = document.getElementById('room-building');
+                const modalTitle = modal.querySelector('.modal-header h3');
+                
+                if (nameInput) nameInput.value = room.name || '';
+                if (descInput) descInput.value = room.description || '';
+                if (capacityInput) capacityInput.value = room.capacity || '';
+                if (buildingSelect) buildingSelect.value = room.building_id || '';
+                if (modalTitle) modalTitle.textContent = 'Otaqi Redakte Et';
+                
+                // Set editing state
+                editingRoomId = roomId;
+                
+                // Load buildings
+                loadBuildingsForModal();
+                
+                // Show modal
+                modal.classList.add('active');
+            }
         }
     } catch (error) {
         console.error('Error loading room for edit:', error);
-        showError('Otağı yüklərkən xəta baş verdi');
+        showError('Otaqi yuklenmek alinmadi');
     }
+}
+
+// Close room modal
+function closeAddRoomModal() {
+    const modal = document.getElementById('add-room-modal');
+    if (modal) {
+        modal.classList.remove('active');
+    }
+    editingRoomId = null;
 }
 
 // Save room (create or update)
 async function saveRoom() {
-    const roomId = document.getElementById('room-id').value;
-    const name = document.getElementById('room-name').value.trim();
-    const description = document.getElementById('room-description').value.trim();
-    const capacity = document.getElementById('room-capacity').value;
-    const buildingId = document.getElementById('room-building').value;
+    const nameInput = document.getElementById('room-name');
+    const descInput = document.getElementById('room-description');
+    const capacityInput = document.getElementById('room-capacity');
+    const buildingSelect = document.getElementById('room-building');
+    
+    const name = nameInput?.value?.trim() || '';
+    const description = descInput?.value?.trim() || '';
+    const capacity = capacityInput?.value;
+    const buildingId = buildingSelect?.value;
     
     if (!name || !buildingId) {
-        showError('Otaq adı və bina mütləq doldurulmalıdır');
+        showError('Otaq adi ve bina mutleq doldurulmalidir');
         return;
     }
     
@@ -297,8 +365,8 @@ async function saveRoom() {
         let url = '/api/rooms';
         let method = 'POST';
         
-        if (roomId) {
-            url = `/api/rooms/${roomId}`;
+        if (editingRoomId) {
+            url = `/api/rooms/${editingRoomId}`;
             method = 'PUT';
         }
         
@@ -314,33 +382,27 @@ async function saveRoom() {
         const data = await response.json();
         
         if (data.success) {
-            closeRoomModal();
+            closeAddRoomModal();
             loadRooms();
-            showSuccess(roomId ? 'Otaq uğurla yeniləndi' : 'Otaq uğurla əlavə edildi');
+            showSuccess(editingRoomId ? 'Otaq ugurla yenilendi' : 'Otaq ugurla elave edildi');
         } else {
-            showError(data.error || 'Xəta baş verdi');
+            showError(data.error || 'Xeta bas verdi');
         }
     } catch (error) {
         console.error('Error saving room:', error);
-        showError('Otağı saxlayarkən xəta baş verdi');
+        showError('Otaqi saxlayarken xeta bas verdi');
+    }
+}
+
+// Confirm delete room
+function confirmDeleteRoom(roomId, roomName) {
+    if (confirm(`"${roomName}" otaqini silmek istediyinize eminsiniz?`)) {
+        deleteRoom(roomId);
     }
 }
 
 // Delete room
-function deleteRoom(roomId) {
-    document.getElementById('room-id').value = roomId;
-    document.getElementById('delete-modal').style.display = 'block';
-}
-
-// Close delete modal
-function closeDeleteModal() {
-    document.getElementById('delete-modal').style.display = 'none';
-}
-
-// Confirm delete
-async function confirmDelete() {
-    const roomId = document.getElementById('room-id').value;
-    
+async function deleteRoom(roomId) {
     try {
         const response = await fetch(`/api/rooms/${roomId}`, {
             method: 'DELETE',
@@ -350,39 +412,28 @@ async function confirmDelete() {
         const data = await response.json();
         
         if (data.success) {
-            closeDeleteModal();
             loadRooms();
-            showSuccess('Otaq uğurla silindi');
+            showSuccess('Otaq ugurla silindi');
         } else {
-            showError(data.error || 'Xəta baş verdi');
+            showError(data.error || 'Xeta bas verdi');
         }
     } catch (error) {
         console.error('Error deleting room:', error);
-        showError('Otağı silərkən xəta baş verdi');
+        showError('Otaqi silmek alinmadi');
     }
 }
 
 // View room items - Redirect to room detail page
 function viewRoomItems(roomId) {
-    // Redirect to the room detail page
     window.location.href = `/organization/building/room/${roomId}`;
 }
 
 // Helper functions
 function escapeHtml(text) {
+    if (!text) return '';
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
-}
-
-function getStatusClass(status) {
-    switch (status) {
-        case 'active': return 'success';
-        case 'inactive': return 'secondary';
-        case 'maintenance': return 'warning';
-        case 'lost': return 'danger';
-        default: return 'info';
-    }
 }
 
 function showSuccess(message) {
@@ -390,19 +441,12 @@ function showSuccess(message) {
 }
 
 function showError(message) {
-    alert(`Xəta: ${message}`);
+    alert(`Xeta: ${message}`);
 }
 
-function getCookie(name) {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop().split(';').shift();
-    return null;
-}
-
-// Logout function
-function logout() {
-    if (confirm('Çıxış etmək istəyirsiz?')) {
-        window.location.href = '/logout';
+// Close modals on outside click
+window.onclick = function(event) {
+    if (event.target.classList.contains('modal')) {
+        event.target.classList.remove('active');
     }
-}
+};
