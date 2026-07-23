@@ -23,11 +23,14 @@ document.addEventListener('DOMContentLoaded', function() {
     loadHistory();
     
     // Add event listeners
-    document.getElementById('search-input').addEventListener('keyup', function(e) {
+    const searchInput = document.getElementById('search-history');
+    if (searchInput) {
+        searchInput.addEventListener('keyup', function(e) {
         if (e.key === 'Enter') {
             applyFilters();
         }
-    });
+        });
+    }
 });
 
 // Load user info
@@ -187,9 +190,8 @@ function getActionClass(action) {
 function applyFilters() {
     currentFilters.startDate = document.getElementById('start-date').value;
     currentFilters.endDate = document.getElementById('end-date').value;
-    currentFilters.search = document.getElementById('search-input').value;
-    currentFilters.actionType = document.getElementById('action-type-filter').value;
-    currentPage = 1;
+    currentFilters.search = document.getElementById('search-history').value;
+    currentFilters.actionType = document.getElementById('action-type').value;
     loadHistory();
 }
 
@@ -201,8 +203,8 @@ function resetFilters() {
     
     document.getElementById('start-date').value = formatDateForInput(startDate);
     document.getElementById('end-date').value = formatDateForInput(endDate);
-    document.getElementById('search-input').value = '';
-    document.getElementById('action-type-filter').value = '';
+    document.getElementById('search-history').value = '';
+    document.getElementById('action-type').value = '';
     
     currentFilters = {
         startDate: formatDateForInput(startDate),
@@ -210,7 +212,6 @@ function resetFilters() {
         search: '',
         actionType: ''
     };
-    currentPage = 1;
     loadHistory();
 }
 
@@ -239,7 +240,7 @@ function updatePagination() {
 async function exportToExcel() {
     try {
         // Show progress modal
-        document.getElementById('export-modal').style.display = 'block';
+        document.getElementById('add-item-modal').style.display = 'block';
         document.getElementById('export-progress').style.width = '0%';
         
         // Prepare export data
@@ -323,7 +324,7 @@ async function exportToExcel() {
             
             // Hide modal after short delay
             setTimeout(() => {
-                document.getElementById('export-modal').style.display = 'none';
+                document.getElementById('add-item-modal').style.display = 'none';
             }, 1000);
             
             showSuccess('Tarixçə uğurla Excel faylına ixrac edildi');
@@ -340,7 +341,7 @@ async function exportToExcel() {
 
 // Close export modal
 function closeExportModal() {
-    document.getElementById('export-modal').style.display = 'none';
+    document.getElementById('add-item-modal').style.display = 'none';
 }
 
 // Helper functions

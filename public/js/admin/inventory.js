@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', function() {
     fetchCurrentUser();
     
     // Add event listeners
-    document.getElementById('search-input').addEventListener('keyup', function(e) {
+    document.getElementById('search-inventory').addEventListener('keyup', function(e) {
         if (e.key === 'Enter') {
             applyFilters();
         }
@@ -141,21 +141,13 @@ async function loadRoomsByBuilding(buildingId) {
 // Load inventory items
 async function loadInventoryItems() {
     try {
-        const params = new URLSearchParams({
-            page: currentPage,
-            limit: 20,
-            ...currentFilters
-        });
+        const params = new URLSearchParams(currentFilters);
         
         const response = await fetch(`/api/inventory-items/filter?${params}`);
         const data = await response.json();
         
         if (data.success) {
             renderInventoryTable(data.data);
-            if (data.pagination) {
-                currentPage = data.pagination.page;
-                totalPages = data.pagination.totalPages;
-            }
         }
     } catch (error) {
         console.error('Error loading inventory items:', error);
@@ -217,18 +209,17 @@ function updatePagination() {
 // Apply filters
 function applyFilters() {
     currentFilters = {
-        search: document.getElementById('search-input').value,
+        search: document.getElementById('search-inventory').value,
         organizationId: document.getElementById('organization-filter').value,
         buildingId: document.getElementById('building-filter').value,
         category: document.getElementById('category-filter').value
     };
-    currentPage = 1;
     loadInventoryItems();
 }
 
 // Reset filters
 function resetFilters() {
-    document.getElementById('search-input').value = '';
+    document.getElementById('search-inventory').value = '';
     document.getElementById('organization-filter').value = '';
     document.getElementById('building-filter').value = '';
     document.getElementById('category-filter').value = '';
@@ -238,7 +229,6 @@ function resetFilters() {
         buildingId: '',
         category: ''
     };
-    currentPage = 1;
     loadInventoryItems();
 }
 
